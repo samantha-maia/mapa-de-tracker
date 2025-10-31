@@ -38,10 +38,6 @@ export function RowGroup({ groupId }: Props) {
   const isUpdatingRef = useRef(false)
   
   // Sempre em modo edição: sem pré-finalização ou offsets
-  // State para armazenar as dimensões antes de finalizar (para manter o tamanho do container)
-  const [preFinalizeDimensions, setPreFinalizeDimensions] = useState<{ width: number; height: number } | null>(null)
-  // Offset usado para normalizar o path em (0,0)
-  const [contourOffset, setContourOffset] = useState<{ left: number; top: number } | null>(null)
 
   // Safety check
   if (!group) return null
