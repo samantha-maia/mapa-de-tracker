@@ -1025,6 +1025,21 @@ export const useLayoutStore = create<SectionState & LayoutActions>()(
                   trackerIds: rowData.trackers.map((trackerData: any) => trackerData.id)
                 }
                 s.rows.push(row)
+
+                // Load trackers from this row into trackersById
+                if (rowData.trackers) {
+                  rowData.trackers.forEach((trackerData: any) => {
+                    const tracker: Tracker = {
+                      id: trackerData.id,
+                      type: trackerData.type,
+                      title: trackerData.title,
+                      rowY: trackerData.rowY ?? 0,
+                      ext: trackerData.ext
+                    }
+                    s.trackersById[tracker.id] = tracker
+                    allTrackerIds.push(tracker.id)
+                  })
+                }
               })
             })
           }
@@ -1041,6 +1056,21 @@ export const useLayoutStore = create<SectionState & LayoutActions>()(
                 trackerIds: rowData.trackers.map((trackerData: any) => trackerData.id)
               }
               s.rows.push(row)
+
+              // Load trackers from this row into trackersById
+              if (rowData.trackers) {
+                rowData.trackers.forEach((trackerData: any) => {
+                  const tracker: Tracker = {
+                    id: trackerData.id,
+                    type: trackerData.type,
+                    title: trackerData.title,
+                    rowY: trackerData.rowY ?? 0,
+                    ext: trackerData.ext
+                  }
+                  s.trackersById[tracker.id] = tracker
+                  allTrackerIds.push(tracker.id)
+                })
+              }
             })
           }
 
