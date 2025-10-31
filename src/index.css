@@ -1,0 +1,13 @@
+@import "tailwindcss";
+
+/* App base styles */
+html, body, #root {
+  height: 100%;
+  overflow: hidden;
+}
+
+body {
+  @apply bg-gray-50 text-gray-900;
+  margin: 0;
+  padding: 0;
+}
