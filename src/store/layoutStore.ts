@@ -1,5 +1,11 @@
 import { create } from 'zustand'
 import { immer } from 'zustand/middleware/immer'
+import { TRACKERS_CATALOG } from '../data/trackersCatalog'
+import { useTrackersStore } from './trackersStore'
+import { calculateRowHeight, calculateTrackerHeight } from '../utils/rowHeightUtils'
+import { GRID } from '../utils/gridConstants'
+
+//precisa adicionar o fields_id que vai vir no get da pagina
 
 export type TrackerType = 'ext'
 
@@ -24,6 +30,8 @@ export type Tracker = {
   ext?: ExtMeta
   // optional adjustable height (px). If undefined, UI computes minimum based on ext
   height?: number
+  // Array de status_id para cada estaca (índice corresponde à posição da estaca)
+  stakeStatusIds?: (number | null)[]
 }
 
 export type Row = {
@@ -47,11 +55,26 @@ export type RowGroup = {
   name?: string
 }
 
+export type TextElement = {
+  id: string
+  x: number
+  y: number
+  text: string
+  fontSize: number
+  color: string
+  fontWeight: 'normal' | 'bold'
+  fontStyle: 'normal' | 'italic'
+  textDecoration: 'none' | 'underline'
+  textAlign: 'left' | 'center' | 'right'
+}
+
 export type SectionState = {
   trackersById: Record<string, Tracker>
   looseIds: string[]
   rows: Row[]
   rowGroups: RowGroup[]
+  textElementsById: Record<string, TextElement>
+  textElementIds: string[]
   selectedIds: string[]
   // dragging context for loose trackers
   draggingId?: string
@@ -62,6 +85,9 @@ export type SectionState = {
   // dragging context for row groups
   draggingGroupId?: string
   dragGroupStart?: { x: number; y: number }
+  // dragging context for text elements
+  draggingTextId?: string
+  dragTextStart?: { x: number; y: number }
   // vertical dragging context for a tracker inside a row
   verticalDragTrackerId?: string
   // zoom state
@@ -87,7 +113,7 @@ export type LayoutActions = {
   setTrackerHeight: (id: string, height: number) => void
   moveFromRowToLoose: (fromRowId: string, trackerId: string, x: number, y: number) => void
   beginDragRow: (rowId: string) => void
-  moveRowByDelta: (rowId: string, dx: number, dy: number, snap: number) => void
+  moveRowByDelta: (rowId: string, dx: number, dy: number, snapX: number, snapY: number) => void
   endDragRow: () => void
   beginVerticalDrag: (trackerId: string) => void
   endVerticalDrag: () => void
@@ -121,12 +147,23 @@ export type LayoutActions = {
   setTrackerRowY: (trackerId: string, rowY: number) => void
   setRowFinalized: (rowId: string, isFinalized: boolean, contourPath?: string) => void
   loadFromJson: (jsonData: string) => void
+  loadFromApi: (projectsId: number, fieldsId: number) => Promise<{ success: boolean; error?: string }> // Carrega o mapa da API
   downloadJson: () => void
+  exportToDatabaseFormat: () => string // Exporta no formato do banco de dados
+  saveToApi: () => Promise<{ success: boolean; error?: string }> // Salva o mapa na API
   // history
   undo: () => void
   redo: () => void
   // group row offset
   setRowGroupOffsetX: (rowId: string, offsetX: number) => void
+  resetGroupRowOffsets: (groupId: string) => void
+  // text element actions
+  addTextElement: (x: number, y: number) => string
+  updateTextElement: (id: string, updates: Partial<Omit<TextElement, 'id'>>, saveHistory?: boolean) => void
+  removeTextElement: (id: string) => void
+  moveTextElementByDelta: (id: string, dx: number, dy: number) => void
+  beginDragText: (id: string) => void
+  endDragText: () => void
 }
 
 let idCounter = 0
@@ -140,6 +177,8 @@ export const useLayoutStore = create<SectionState & LayoutActions>()(
     looseIds: [],
     rows: [],
     rowGroups: [],
+    textElementsById: {},
+    textElementIds: [],
     selectedIds: [],
     zoom: 1,
     panX: 0,
@@ -156,7 +195,7 @@ export const useLayoutStore = create<SectionState & LayoutActions>()(
       set((s) => { s.historyPast.push(snap); s.historyFuture = [] })
       const id = nextId('row')
       set((s) => {
-        s.rows.push({ id, trackerIds: [], x: 40, y: 40 })
+        s.rows.push({ id, trackerIds: [], x: 20, y: 20 })
       })
       return id
     },
@@ -302,13 +341,13 @@ export const useLayoutStore = create<SectionState & LayoutActions>()(
       set({ draggingRowId: rowId, dragRowStart: { x: row?.x ?? 0, y: row?.y ?? 0 } })
     },
 
-    moveRowByDelta: (rowId, dx, dy, snap) => {
+    moveRowByDelta: (rowId, dx, dy, snapX, snapY) => {
       set((s) => {
         const row = s.rows.find((r) => r.id === rowId)
         if (!row) return
         const start = s.dragRowStart ?? { x: row.x ?? 0, y: row.y ?? 0 }
-        row.x = snapToGrid(start.x + dx, snap)
-        row.y = snapToGrid(start.y + dy, snap)
+        row.x = snapToGrid(start.x + dx, snapX)
+        row.y = snapToGrid(start.y + dy, snapY)
       })
     },
 
@@ -365,13 +404,33 @@ export const useLayoutStore = create<SectionState & LayoutActions>()(
     groupSelectedIntoRow: () => {
       const state = get()
       const looseSelected = state.selectedIds.filter((id) => state.looseIds.includes(id))
-      if (looseSelected.length === 0) return undefined
+      if (looseSelected.length === 0) {
+        console.warn('groupSelectedIntoRow: Nenhum tracker solto selecionado. Selecione trackers que estão soltos no canvas.')
+        return undefined
+      }
       const trackers = looseSelected.map((id) => state.trackersById[id]).filter(Boolean) as Tracker[]
+      if (trackers.length === 0) {
+        console.warn('groupSelectedIntoRow: Nenhum tracker válido encontrado.')
+        return undefined
+      }
+      
+      // Calculate position: use the leftmost and topmost positions
+      // But account for row padding: px-4 (16px) header + px-2 (8px) content = 24px total offset
+      const ROW_PADDING_OFFSET = 24 // px-4 (16px) + px-2 (8px)
       const minX = Math.min(...trackers.map((t) => t.x ?? 0))
       const minY = Math.min(...trackers.map((t) => t.y ?? 0))
 
-      // Order by x for horizontal arrangement
-      const ordered = [...trackers].sort((a, b) => (a.x ?? 0) - (b.x ?? 0))
+      // Order by x (horizontal), then by y (vertical) for consistent arrangement
+      const ordered = [...trackers].sort((a, b) => {
+        const ax = a.x ?? 0
+        const bx = b.x ?? 0
+        if (Math.abs(ax - bx) < 30) {
+          // If x positions are close (within 30px), sort by y
+          return (a.y ?? 0) - (b.y ?? 0)
+        }
+        return ax - bx
+      })
+      
       const newRowId = nextId('row')
       set((s) => {
         // remove loose positions and ids
@@ -383,7 +442,14 @@ export const useLayoutStore = create<SectionState & LayoutActions>()(
           }
         }
         s.looseIds = s.looseIds.filter((id) => !looseSelected.includes(id))
-        s.rows.push({ id: newRowId, trackerIds: ordered.map((t) => t.id), x: snapToGrid(minX, 10), y: snapToGrid(minY, 10) })
+        // Adjust X position to account for row padding so trackers align correctly
+        // The row's X position should be minX - padding offset
+        s.rows.push({ 
+          id: newRowId, 
+          trackerIds: ordered.map((t) => t.id), 
+          x: snapToGrid(minX - ROW_PADDING_OFFSET, 30), 
+          y: snapToGrid(minY, 30) 
+        })
         s.selectedIds = []
       })
       return newRowId
@@ -576,6 +642,7 @@ export const useLayoutStore = create<SectionState & LayoutActions>()(
         })
 
         // Compute left normalization to preserve relative horizontal positions
+        // Use the actual row X positions (which already account for padding when created)
         const minX = Math.min(...rowsInOrder.map(r => r.x ?? 0))
 
         s.rowGroups.push({ 
@@ -589,10 +656,14 @@ export const useLayoutStore = create<SectionState & LayoutActions>()(
         })
         
         // Update rows to reference the group
+        // Calculate offset relative to the leftmost row position
+        // The offset should align the content areas, not the row containers
         for (const rowId of rowsInOrder.map((r) => r.id)) {
           const row = s.rows.find((r) => r.id === rowId)
           if (row) {
             row.groupId = newGroupId
+            // Offset is simply the difference in X positions
+            // The padding is already accounted for in the row's x position
             row.groupOffsetX = (row.x ?? 0) - minX
           }
         }
@@ -734,6 +805,30 @@ export const useLayoutStore = create<SectionState & LayoutActions>()(
           }
         }
 
+        // Duplicate text elements
+        const selectedTexts = state.selectedIds.filter((id) => state.textElementIds.includes(id))
+        for (const id of selectedTexts) {
+          const text = state.textElementsById[id]
+          if (text) {
+            const newId = nextId('text')
+            const newText: TextElement = {
+              id: newId,
+              x: text.x + offset,
+              y: text.y + offset,
+              text: text.text,
+              fontSize: text.fontSize,
+              color: text.color,
+              fontWeight: text.fontWeight,
+              fontStyle: text.fontStyle,
+              textDecoration: text.textDecoration,
+              textAlign: text.textAlign
+            }
+            s.textElementsById[newId] = newText
+            s.textElementIds.push(newId)
+            newIds.push(newId)
+          }
+        }
+
         // Select the newly created items
         s.selectedIds = newIds
       })
@@ -762,7 +857,8 @@ export const useLayoutStore = create<SectionState & LayoutActions>()(
               type: t.type,
               title: t.title,
               rowY: t.rowY ?? 0,
-              ext: t.ext
+              ext: t.ext,
+              stakeStatusIds: t.stakeStatusIds
             }
           })
         }))
@@ -794,20 +890,38 @@ export const useLayoutStore = create<SectionState & LayoutActions>()(
               type: t.type,
               title: t.title,
               rowY: t.rowY ?? 0,
-              ext: t.ext
+              ext: t.ext,
+              stakeStatusIds: t.stakeStatusIds
             }
           })
         }))
 
       const loose = s.looseIds.map((id) => {
         const t = s.trackersById[id]
-        return { id: t.id, type: t.type, title: t.title, x: t.x ?? 0, y: t.y ?? 0, ext: t.ext }
+        return { id: t.id, type: t.type, title: t.title, x: t.x ?? 0, y: t.y ?? 0, ext: t.ext, stakeStatusIds: t.stakeStatusIds }
+      })
+
+      const textElements = s.textElementIds.map((id) => {
+        const text = s.textElementsById[id]
+        return {
+          id: text.id,
+          x: text.x,
+          y: text.y,
+          text: text.text,
+          fontSize: text.fontSize,
+          color: text.color,
+          fontWeight: text.fontWeight,
+          fontStyle: text.fontStyle,
+          textDecoration: text.textDecoration,
+          textAlign: text.textAlign
+        }
       })
 
       const json = {
         groups,
         standaloneRows,
         loose,
+        textElements,
         settings: {
           trackerWidth: 109,
           gap: 8,
@@ -856,55 +970,213 @@ export const useLayoutStore = create<SectionState & LayoutActions>()(
 
     alignSelected: (type) => {
       set((s) => {
-        const selected = s.selectedIds.filter((id) => s.looseIds.includes(id))
-        if (selected.length < 2) return
+        // Handle loose trackers
+        const selectedTrackers = s.selectedIds.filter((id) => s.looseIds.includes(id))
+        if (selectedTrackers.length >= 2) {
+          const trackers = selectedTrackers.map((id) => s.trackersById[id]).filter(Boolean) as Tracker[]
+          if (trackers.length >= 2) {
+            // Calculate actual tracker dimensions based on stakes
+            const positions = trackers.map((t) => {
+              const stakeCount = t?.ext?.stake_quantity ?? 0
+              const height = calculateTrackerHeight(stakeCount)
+              return { x: t.x ?? 0, y: t.y ?? 0, width: 30, height }
+            })
 
-        const trackers = selected.map((id) => s.trackersById[id]).filter(Boolean) as Tracker[]
-        if (trackers.length < 2) return
+            if (type === 'left') {
+              const minX = Math.min(...positions.map((p) => p.x))
+              trackers.forEach((t) => {
+                if (t.x !== undefined) t.x = minX
+              })
+            } else if (type === 'right') {
+              const maxX = Math.max(...positions.map((p) => p.x + p.width))
+              trackers.forEach((t) => {
+                if (t.x !== undefined) t.x = maxX - 30
+              })
+            } else if (type === 'center') {
+              const minX = Math.min(...positions.map((p) => p.x))
+              const maxX = Math.max(...positions.map((p) => p.x + p.width))
+              const centerX = (minX + maxX) / 2
+              trackers.forEach((t) => {
+                if (t.x !== undefined) t.x = centerX - 15
+              })
+            } else if (type === 'top') {
+              const minY = Math.min(...positions.map((p) => p.y))
+              trackers.forEach((t) => {
+                if (t.y !== undefined) t.y = minY
+              })
+            } else if (type === 'bottom') {
+              const maxY = Math.max(...positions.map((p) => p.y + p.height))
+              trackers.forEach((t, index) => {
+                const trackerHeight = positions[index].height
+                if (t.y !== undefined) t.y = maxY - trackerHeight
+              })
+            } else if (type === 'middle') {
+              const minY = Math.min(...positions.map((p) => p.y))
+              const maxY = Math.max(...positions.map((p) => p.y + p.height))
+              const centerY = (minY + maxY) / 2
+              trackers.forEach((t, index) => {
+                const trackerHeight = positions[index].height
+                if (t.y !== undefined) t.y = centerY - trackerHeight / 2
+              })
+            }
 
-        const positions = trackers.map((t) => ({ x: t.x ?? 0, y: t.y ?? 0, width: 103, height: 80 }))
-
-        if (type === 'left') {
-          const minX = Math.min(...positions.map((p) => p.x))
-          trackers.forEach((t) => {
-            if (t.x !== undefined) t.x = minX
-          })
-        } else if (type === 'right') {
-          const maxX = Math.max(...positions.map((p) => p.x + p.width))
-          trackers.forEach((t) => {
-            if (t.x !== undefined) t.x = maxX - 103
-          })
-        } else if (type === 'center') {
-          const minX = Math.min(...positions.map((p) => p.x))
-          const maxX = Math.max(...positions.map((p) => p.x + p.width))
-          const centerX = (minX + maxX) / 2
-          trackers.forEach((t) => {
-            if (t.x !== undefined) t.x = centerX - 51.5
-          })
-        } else if (type === 'top') {
-          const minY = Math.min(...positions.map((p) => p.y))
-          trackers.forEach((t) => {
-            if (t.y !== undefined) t.y = minY
-          })
-        } else if (type === 'bottom') {
-          const maxY = Math.max(...positions.map((p) => p.y + p.height))
-          trackers.forEach((t) => {
-            if (t.y !== undefined) t.y = maxY - 80
-          })
-        } else if (type === 'middle') {
-          const minY = Math.min(...positions.map((p) => p.y))
-          const maxY = Math.max(...positions.map((p) => p.y + p.height))
-          const centerY = (minY + maxY) / 2
-          trackers.forEach((t) => {
-            if (t.y !== undefined) t.y = centerY - 40
-          })
+            // Snap to grid
+            trackers.forEach((t) => {
+              if (t.x !== undefined) t.x = snapToGrid(t.x, 30)
+              if (t.y !== undefined) t.y = snapToGrid(t.y, 30)
+            })
+          }
         }
 
-        // Snap to grid
-        trackers.forEach((t) => {
-          if (t.x !== undefined) t.x = snapToGrid(t.x, 10)
-          if (t.y !== undefined) t.y = snapToGrid(t.y, 10)
-        })
+        // Handle rows (not in groups)
+        const selectedRows = s.selectedIds.filter((id) => s.rows.some((r) => r.id === id && !r.groupId))
+        if (selectedRows.length >= 2) {
+          const rows = selectedRows.map((id) => s.rows.find((r) => r.id === id)).filter(Boolean) as Row[]
+          if (rows.length >= 2) {
+            const rowData = rows.map((r) => ({
+              row: r,
+              x: r.x ?? 0,
+              y: r.y ?? 0,
+              height: calculateRowHeight(r, s.trackersById)
+            }))
+
+            if (type === 'left') {
+              const minX = Math.min(...rowData.map((d) => d.x))
+              rows.forEach((r) => {
+                if (r.x !== undefined) r.x = minX
+              })
+            } else if (type === 'right') {
+              // For rows, we'd need width, but rows don't have fixed width
+              // Skip right alignment for rows for now
+            } else if (type === 'center') {
+              // Skip center alignment for rows for now (would need width)
+            } else if (type === 'top') {
+              // Sort rows by current Y position to stack them properly
+              const sortedRows = [...rowData].sort((a, b) => a.y - b.y)
+              let currentY = sortedRows[0].y
+              
+              sortedRows.forEach((data) => {
+                if (data.row.y !== undefined) {
+                  data.row.y = currentY
+                  // Move to next position: current Y + height of this row + gap mínimo de 4px
+                  currentY = currentY + data.height + 4 // gap mínimo entre rows
+                }
+              })
+            } else if (type === 'bottom') {
+              const maxY = Math.max(...rowData.map((d) => d.y + d.height))
+              rows.forEach((r) => {
+                const rowH = calculateRowHeight(r, s.trackersById)
+                if (r.y !== undefined) r.y = maxY - rowH
+              })
+            } else if (type === 'middle') {
+              const minY = Math.min(...rowData.map((d) => d.y))
+              const maxY = Math.max(...rowData.map((d) => d.y + d.height))
+              const centerY = (minY + maxY) / 2
+              rows.forEach((r) => {
+                const rowH = calculateRowHeight(r, s.trackersById)
+                if (r.y !== undefined) r.y = centerY - rowH / 2
+              })
+            }
+
+            // Snap to grid
+            rows.forEach((r) => {
+              if (r.x !== undefined) r.x = snapToGrid(r.x, 30)
+              if (r.y !== undefined) r.y = snapToGrid(r.y, 30)
+            })
+          }
+        }
+
+        // Handle row groups
+        const selectedGroups = s.selectedIds.filter((id) => s.rowGroups.some((g) => g.id === id))
+        if (selectedGroups.length >= 2) {
+          const groups = selectedGroups.map((id) => s.rowGroups.find((g) => g.id === id)).filter(Boolean) as RowGroup[]
+          if (groups.length >= 2) {
+            // Calculate group dimensions based on their rows and offsets
+            const groupData = groups.map((g) => {
+              const groupRows = g.rowIds.map((rowId) => s.rows.find((r) => r.id === rowId)).filter(Boolean) as Row[]
+              if (groupRows.length === 0) {
+                return { group: g, x: g.x ?? 0, y: g.y ?? 0, width: 200, height: 120 }
+              }
+              
+              // Calculate width: consider max offset + row width
+              // Each row has a groupOffsetX that positions it within the group
+              // Width = max(offsetX + rowWidth) - min(offsetX) + padding
+              const rowWidths = groupRows.map((r) => {
+                const trackerCount = r.trackerIds.length
+                // 30px tracker width + 8px gap between trackers
+                const rowContentWidth = trackerCount > 0 ? trackerCount * 30 + (trackerCount - 1) * 8 : 200
+                // Add padding: px-2 = 8px on each side = 16px total
+                return rowContentWidth + 16
+              })
+              
+              const maxOffsetX = Math.max(...groupRows.map((r) => r.groupOffsetX ?? 0))
+              const minOffsetX = Math.min(...groupRows.map((r) => r.groupOffsetX ?? 0))
+              const maxRowWidth = Math.max(...rowWidths)
+              // Total width = distance from leftmost to rightmost edge
+              const estimatedWidth = Math.max(200, maxOffsetX + maxRowWidth - minOffsetX + 32) // +32 for group padding
+              
+              // Calculate height: sum of row heights + gaps between rows
+              const rowHeights = groupRows.map((r) => calculateRowHeight(r, s.trackersById))
+              const totalHeight = rowHeights.reduce((sum, h) => sum + h, 0) + (groupRows.length - 1) * 4 // 4px gap between rows
+              // Add padding: pt-2 (8px) + py-2 (8px top + 8px bottom) = 24px
+              const estimatedHeight = Math.max(120, totalHeight + 24)
+              
+              return {
+                group: g,
+                x: g.x ?? 0,
+                y: g.y ?? 0,
+                width: estimatedWidth,
+                height: estimatedHeight
+              }
+            })
+
+            if (type === 'left') {
+              const minX = Math.min(...groupData.map((d) => d.x))
+              groups.forEach((g) => {
+                if (g.x !== undefined) g.x = minX
+              })
+            } else if (type === 'right') {
+              const maxX = Math.max(...groupData.map((d) => d.x + d.width))
+              groups.forEach((g, index) => {
+                const groupWidth = groupData[index].width
+                if (g.x !== undefined) g.x = maxX - groupWidth
+              })
+            } else if (type === 'center') {
+              const minX = Math.min(...groupData.map((d) => d.x))
+              const maxX = Math.max(...groupData.map((d) => d.x + d.width))
+              const centerX = (minX + maxX) / 2
+              groups.forEach((g, index) => {
+                const groupWidth = groupData[index].width
+                if (g.x !== undefined) g.x = centerX - groupWidth / 2
+              })
+            } else if (type === 'top') {
+              const minY = Math.min(...groupData.map((d) => d.y))
+              groups.forEach((g) => {
+                if (g.y !== undefined) g.y = minY
+              })
+            } else if (type === 'bottom') {
+              const maxY = Math.max(...groupData.map((d) => d.y + d.height))
+              groups.forEach((g, index) => {
+                const groupHeight = groupData[index].height
+                if (g.y !== undefined) g.y = maxY - groupHeight
+              })
+            } else if (type === 'middle') {
+              const minY = Math.min(...groupData.map((d) => d.y))
+              const maxY = Math.max(...groupData.map((d) => d.y + d.height))
+              const centerY = (minY + maxY) / 2
+              groups.forEach((g, index) => {
+                const groupHeight = groupData[index].height
+                if (g.y !== undefined) g.y = centerY - groupHeight / 2
+              })
+            }
+
+            // Snap to grid
+            groups.forEach((g) => {
+              if (g.x !== undefined) g.x = snapToGrid(g.x, 30)
+              if (g.y !== undefined) g.y = snapToGrid(g.y, 30)
+            })
+          }
+        }
       })
     },
 
@@ -985,7 +1257,7 @@ export const useLayoutStore = create<SectionState & LayoutActions>()(
 
     loadFromJson: (jsonData) => {
       try {
-        const data = JSON.parse(jsonData)
+        const parsedData = JSON.parse(jsonData)
         
         set((s) => {
           // Clear existing data
@@ -993,36 +1265,362 @@ export const useLayoutStore = create<SectionState & LayoutActions>()(
           s.looseIds = []
           s.rows = []
           s.rowGroups = []
+          s.textElementsById = {}
+          s.textElementIds = []
           s.selectedIds = []
           
           // Load trackers
           const allTrackerIds: string[] = []
           
-          // Load groups and their rows/trackers
-          if (data.groups) {
-            data.groups.forEach((groupData: any) => {
-              const group: RowGroup = {
-                id: groupData.id,
-                x: groupData.x,
-                y: groupData.y,
-                isFinalized: groupData.isFinalized,
-                contourPath: groupData.contourPath,
-                name: groupData.name,
-                rowIds: groupData.rows.map((rowData: any) => rowData.id)
+          // Helper function to get tracker metadata from store or catalog
+          const getTrackerFromCatalog = (trackersId: number): ExtMeta | undefined => {
+            // Tenta buscar do store primeiro (trackers da API)
+            const storeTracker = useTrackersStore.getState().getTrackerById(trackersId)
+            if (storeTracker) {
+              return {
+                id: storeTracker.id,
+                stake_quantity: storeTracker.stake_quantity,
+                max_modules: storeTracker.max_modules,
+                type: storeTracker._trackers_types.type,
+                manufacturer: storeTracker._manufacturers.name
               }
-              s.rowGroups.push(group)
+            }
+            // Fallback para o catálogo estático
+            const catalogTracker = TRACKERS_CATALOG.find(t => t.id === trackersId)
+            if (!catalogTracker) return undefined
+            return {
+              id: catalogTracker.id,
+              stake_quantity: catalogTracker.stake_quantity,
+              max_modules: catalogTracker.max_modules,
+              type: catalogTracker._trackers_types.type,
+              manufacturer: catalogTracker._manufacturers.name
+            }
+          }
+          
+          // Check if it's database structure (array of sections/rows) or old structure (object with groups)
+          const isDatabaseStructure = Array.isArray(parsedData)
+          
+          if (isDatabaseStructure) {
+            // Check structure type:
+            // 1. Sections with rows inside: parsedData[0].rows[0].list_rows_trackers
+            // 2. Rows directly: parsedData[0].list_rows_trackers
+            // 3. Old structure: parsedData[0].rows (sections with nested structure)
+            const firstItem = parsedData[0]
+            const isSectionsWithRows = firstItem?.rows && Array.isArray(firstItem.rows) && firstItem.rows.length > 0 && firstItem.rows[0]?.list_rows_trackers !== undefined
+            const isNewRowStructure = firstItem?.list_rows_trackers !== undefined
+            
+            if (isSectionsWithRows) {
+              // Structure: array of sections, each with rows containing list_rows_trackers
+              parsedData.forEach((sectionData: any) => {
+                const sectionId = String(sectionData.id)
+                
+                // Create section (group) from database
+                const section: RowGroup = {
+                  id: sectionId,
+                  x: sectionData.x ?? 0,
+                  y: sectionData.y ?? 0,
+                  isFinalized: sectionData.isFinalized ?? false,
+                  contourPath: sectionData.contourPath ?? '',
+                  name: sectionData.section_number !== undefined ? `Section ${sectionData.section_number}` : `Section ${sectionId}`,
+                  rowIds: sectionData.rows ? sectionData.rows.map((rowData: any) => String(rowData.id)) : []
+                }
+                s.rowGroups.push(section)
+                
+                // Process rows in this section
+                if (sectionData.rows && Array.isArray(sectionData.rows)) {
+                  sectionData.rows.forEach((rowData: any) => {
+                    const rowId = String(rowData.id)
+                    const row: Row = {
+                      id: rowId,
+                      x: rowData.x ?? 0,
+                      y: rowData.y ?? 0,
+                      isFinalized: rowData.isFinalized ?? false,
+                      contourPath: rowData.contourPath ?? '',
+                      groupId: sectionId,
+                      groupOffsetX: rowData.groupOffsetX ?? 0,
+                      trackerIds: rowData.list_rows_trackers ? rowData.list_rows_trackers.map((trackerData: any) => String(trackerData.id)) : []
+                    }
+                    s.rows.push(row)
+                    
+                    // Load trackers from this row
+                    if (rowData.list_rows_trackers) {
+                      rowData.list_rows_trackers.forEach((trackerData: any) => {
+                        const trackerId = String(trackerData.id)
+                        const catalogExt = getTrackerFromCatalog(trackerData.trackers_id)
+                        
+                        // Extract stakeStatusIds from list_trackers_stakes
+                        // Order by stake position (A, B, C, etc.) or by array index
+                        let stakeStatusIds: (number | null)[] | undefined = undefined
+                        if (trackerData.list_trackers_stakes && Array.isArray(trackerData.list_trackers_stakes)) {
+                          // Sort stakes by position (A, B, C...) or keep original order
+                          const sortedStakes = [...trackerData.list_trackers_stakes].sort((a: any, b: any) => {
+                            const posA = a.stakes?.position || ''
+                            const posB = b.stakes?.position || ''
+                            if (posA && posB) {
+                              return posA.localeCompare(posB)
+                            }
+                            return 0
+                          })
+                          
+                          stakeStatusIds = sortedStakes.map((stake: any) => {
+                            return stake.stakes_statuses_id ?? null
+                          })
+                        }
+                        
+                        // Use stake_quantity from JSON (trackerData.trackers.stake_quantity) if available,
+                        // otherwise fall back to catalog
+                        const actualStakeQuantity = trackerData.trackers?.stake_quantity ?? catalogExt?.stake_quantity ?? 0
+                        
+                        // Create ext metadata with actual stake_quantity from JSON
+                        const ext: ExtMeta | undefined = catalogExt ? {
+                          ...catalogExt,
+                          stake_quantity: actualStakeQuantity
+                        } : undefined
+                        
+                        const tracker: Tracker = {
+                          id: trackerId,
+                          type: 'ext',
+                          title: 'Tracker',
+                          rowY: trackerData.rowY ?? 0,
+                          ext: ext,
+                          stakeStatusIds: stakeStatusIds
+                        }
+                        s.trackersById[tracker.id] = tracker
+                        allTrackerIds.push(tracker.id)
+                      })
+                    }
+                  })
+                }
+              })
+            } else if (isNewRowStructure) {
+              // New structure: array of rows, each with list_rows_trackers
+              // Group rows by sections_id to create groups
+              const rowsBySection = new Map<number, any[]>()
+              
+              parsedData.forEach((rowData: any) => {
+                const sectionId = rowData.sections_id
+                if (!rowsBySection.has(sectionId)) {
+                  rowsBySection.set(sectionId, [])
+                }
+                rowsBySection.get(sectionId)!.push(rowData)
+              })
+              
+              // Create groups (sections) and their rows
+              rowsBySection.forEach((rowsInSection, sectionId) => {
+                const sectionIdStr = String(sectionId)
+                const section: RowGroup = {
+                  id: sectionIdStr,
+                  x: 0, // Will be set from row positions or saved separately
+                  y: 0,
+                  isFinalized: false,
+                  contourPath: '',
+                  name: `Section ${sectionId}`,
+                  rowIds: rowsInSection.map((rowData: any) => String(rowData.id))
+                }
+                s.rowGroups.push(section)
+                
+                // Process each row in this section
+                rowsInSection.forEach((rowData: any) => {
+                  const rowId = String(rowData.id)
+                  const row: Row = {
+                    id: rowId,
+                    x: 0, // Will be set from saved positions
+                    y: 0,
+                    isFinalized: false,
+                    contourPath: '',
+                    groupId: sectionIdStr,
+                    groupOffsetX: 0,
+                    trackerIds: rowData.list_rows_trackers ? rowData.list_rows_trackers.map((trackerData: any) => String(trackerData.id)) : []
+                  }
+                  s.rows.push(row)
+                  
+                  // Load trackers from this row
+                  if (rowData.list_rows_trackers) {
+                    rowData.list_rows_trackers.forEach((trackerData: any) => {
+                      const trackerId = String(trackerData.id)
+                      const catalogExt = getTrackerFromCatalog(trackerData.trackers_id)
+                      
+                      // Extract stakeStatusIds from list_trackers_stakes
+                      // Order by stake position (A, B, C, etc.) or by array index
+                      let stakeStatusIds: (number | null)[] | undefined = undefined
+                      if (trackerData.list_trackers_stakes && Array.isArray(trackerData.list_trackers_stakes)) {
+                        // Sort stakes by position (A, B, C...) or keep original order
+                        const sortedStakes = [...trackerData.list_trackers_stakes].sort((a: any, b: any) => {
+                          const posA = a.stakes?.position || ''
+                          const posB = b.stakes?.position || ''
+                          if (posA && posB) {
+                            return posA.localeCompare(posB)
+                          }
+                          return 0
+                        })
+                        
+                        stakeStatusIds = sortedStakes.map((stake: any) => {
+                          return stake.stakes_statuses_id ?? null
+                        })
+                      }
+                      
+                      // Use stake_quantity from JSON (trackerData.trackers.stake_quantity) if available,
+                      // otherwise fall back to catalog
+                      const actualStakeQuantity = trackerData.trackers?.stake_quantity ?? catalogExt?.stake_quantity ?? 0
+                      
+                      // Create ext metadata with actual stake_quantity from JSON
+                      const ext: ExtMeta | undefined = catalogExt ? {
+                        ...catalogExt,
+                        stake_quantity: actualStakeQuantity
+                      } : undefined
+                      
+                      const tracker: Tracker = {
+                        id: trackerId,
+                        type: 'ext',
+                        title: 'Tracker',
+                        rowY: trackerData.rowY ?? 0,
+                        ext: ext,
+                        stakeStatusIds: stakeStatusIds
+                      }
+                      s.trackersById[tracker.id] = tracker
+                      allTrackerIds.push(tracker.id)
+                    })
+                  }
+                })
+              })
+            } else {
+              // Old database structure: array of sections
+              parsedData.forEach((sectionData: any) => {
+                const sectionId = String(sectionData.id)
+                
+                // Create section (group) from database
+                const section: RowGroup = {
+                  id: sectionId,
+                  x: sectionData.x ?? 0,
+                  y: sectionData.y ?? 0,
+                  isFinalized: sectionData.isFinalized ?? false,
+                  contourPath: sectionData.contourPath ?? '',
+                  name: `Section ${sectionData.section_number}`,
+                  rowIds: sectionData.rows ? sectionData.rows.map((rowData: any) => String(rowData.id)) : []
+                }
+                s.rowGroups.push(section)
 
-              // Load rows for this group
-              groupData.rows.forEach((rowData: any) => {
+                // Load rows for this section
+                if (sectionData.rows) {
+                  sectionData.rows.forEach((rowData: any) => {
+                    const rowId = String(rowData.id)
+                    const row: Row = {
+                      id: rowId,
+                      x: rowData.x ?? 0,
+                      y: rowData.y ?? 0,
+                      isFinalized: rowData.isFinalized ?? false,
+                      contourPath: rowData.contourPath ?? '',
+                      groupId: sectionId,
+                      groupOffsetX: rowData.groupOffsetX ?? 0,
+                      trackerIds: rowData.trackers ? rowData.trackers.map((trackerData: any) => String(trackerData.id)) : []
+                    }
+                    s.rows.push(row)
+
+                    // Load trackers from this row into trackersById
+                    if (rowData.trackers) {
+                      rowData.trackers.forEach((trackerData: any) => {
+                        const trackerId = String(trackerData.id)
+                        const ext = getTrackerFromCatalog(trackerData.trackers_id ?? trackerData.trackersId)
+                        
+                        const tracker: Tracker = {
+                          id: trackerId,
+                          type: 'ext',
+                          title: 'Tracker',
+                          rowY: trackerData.rowY ?? 0,
+                          ext: ext,
+                          stakeStatusIds: trackerData.stakeStatusIds ?? undefined
+                        }
+                        s.trackersById[tracker.id] = tracker
+                        allTrackerIds.push(tracker.id)
+                      })
+                    }
+                  })
+                }
+              })
+            }
+
+            // Load text elements from database structure (if they exist at root level)
+            if (Array.isArray(parsedData) && parsedData.length > 0 && parsedData[0].textElements) {
+              parsedData[0].textElements.forEach((textData: any) => {
+                const text: TextElement = {
+                  id: String(textData.id),
+                  x: textData.x ?? 0,
+                  y: textData.y ?? 0,
+                  text: textData.text ?? 'Novo texto',
+                  fontSize: textData.fontSize ?? 14,
+                  color: textData.color ?? '#000000',
+                  fontWeight: textData.fontWeight ?? 'normal',
+                  fontStyle: textData.fontStyle ?? 'normal',
+                  textDecoration: textData.textDecoration ?? 'none',
+                  textAlign: textData.textAlign ?? 'left'
+                }
+                s.textElementsById[text.id] = text
+                s.textElementIds.push(text.id)
+              })
+            }
+          } else {
+            // Old structure: object with groups, standaloneRows, loose
+            const data = parsedData
+            
+            // Load groups and their rows/trackers
+            if (data.groups) {
+              data.groups.forEach((groupData: any) => {
+                const group: RowGroup = {
+                  id: String(groupData.id),
+                  x: groupData.x ?? 0,
+                  y: groupData.y ?? 0,
+                  isFinalized: groupData.isFinalized ?? false,
+                  contourPath: groupData.contourPath ?? '',
+                  name: groupData.name,
+                  rowIds: groupData.rows ? groupData.rows.map((rowData: any) => String(rowData.id)) : []
+                }
+                s.rowGroups.push(group)
+
+                // Load rows for this group
+                if (groupData.rows) {
+                  groupData.rows.forEach((rowData: any) => {
+                    const row: Row = {
+                      id: String(rowData.id),
+                      x: rowData.x ?? 0,
+                      y: rowData.y ?? 0,
+                      isFinalized: rowData.isFinalized ?? false,
+                      contourPath: rowData.contourPath ?? '',
+                      groupId: String(groupData.id),
+                      groupOffsetX: rowData.groupOffsetX ?? 0,
+                      trackerIds: rowData.trackers ? rowData.trackers.map((trackerData: any) => String(trackerData.id)) : []
+                    }
+                    s.rows.push(row)
+
+                    // Load trackers from this row into trackersById
+                    if (rowData.trackers) {
+                      rowData.trackers.forEach((trackerData: any) => {
+                        const tracker: Tracker = {
+                          id: String(trackerData.id),
+                          type: trackerData.type ?? 'ext',
+                          title: trackerData.title ?? 'Tracker',
+                          rowY: trackerData.rowY ?? 0,
+                          ext: trackerData.ext,
+                          stakeStatusIds: trackerData.stakeStatusIds ?? undefined
+                        }
+                        s.trackersById[tracker.id] = tracker
+                        allTrackerIds.push(tracker.id)
+                      })
+                    }
+                  })
+                }
+              })
+            }
+
+            // Load standalone rows
+            if (data.standaloneRows) {
+              data.standaloneRows.forEach((rowData: any) => {
                 const row: Row = {
-                  id: rowData.id,
-                  x: rowData.x,
-                  y: rowData.y,
-                  isFinalized: rowData.isFinalized,
-                  contourPath: rowData.contourPath,
-                  groupId: groupData.id,
-                  groupOffsetX: rowData.groupOffsetX,
-                  trackerIds: rowData.trackers.map((trackerData: any) => trackerData.id)
+                  id: String(rowData.id),
+                  x: rowData.x ?? 0,
+                  y: rowData.y ?? 0,
+                  isFinalized: rowData.isFinalized ?? false,
+                  contourPath: rowData.contourPath ?? '',
+                  trackerIds: rowData.trackers ? rowData.trackers.map((trackerData: any) => String(trackerData.id)) : []
                 }
                 s.rows.push(row)
 
@@ -1030,9 +1628,9 @@ export const useLayoutStore = create<SectionState & LayoutActions>()(
                 if (rowData.trackers) {
                   rowData.trackers.forEach((trackerData: any) => {
                     const tracker: Tracker = {
-                      id: trackerData.id,
-                      type: trackerData.type,
-                      title: trackerData.title,
+                      id: String(trackerData.id),
+                      type: trackerData.type ?? 'ext',
+                      title: trackerData.title ?? 'Tracker',
                       rowY: trackerData.rowY ?? 0,
                       ext: trackerData.ext
                     }
@@ -1041,59 +1639,81 @@ export const useLayoutStore = create<SectionState & LayoutActions>()(
                   })
                 }
               })
-            })
-          }
+            }
 
-          // Load standalone rows
-          if (data.standaloneRows) {
-            data.standaloneRows.forEach((rowData: any) => {
-              const row: Row = {
-                id: rowData.id,
-                x: rowData.x,
-                y: rowData.y,
-                isFinalized: rowData.isFinalized,
-                contourPath: rowData.contourPath,
-                trackerIds: rowData.trackers.map((trackerData: any) => trackerData.id)
-              }
-              s.rows.push(row)
+            // Load loose trackers
+            if (data.loose) {
+              data.loose.forEach((trackerData: any) => {
+                const tracker: Tracker = {
+                  id: String(trackerData.id),
+                  type: trackerData.type ?? 'ext',
+                  title: trackerData.title ?? 'Tracker',
+                  x: trackerData.x ?? 0,
+                  y: trackerData.y ?? 0,
+                  ext: trackerData.ext,
+                  stakeStatusIds: trackerData.stakeStatusIds ?? undefined
+                }
+                
+                s.trackersById[tracker.id] = tracker
+                s.looseIds.push(tracker.id)
+                allTrackerIds.push(tracker.id)
+              })
+            }
 
-              // Load trackers from this row into trackersById
-              if (rowData.trackers) {
-                rowData.trackers.forEach((trackerData: any) => {
-                  const tracker: Tracker = {
-                    id: trackerData.id,
-                    type: trackerData.type,
-                    title: trackerData.title,
-                    rowY: trackerData.rowY ?? 0,
-                    ext: trackerData.ext
-                  }
-                  s.trackersById[tracker.id] = tracker
-                  allTrackerIds.push(tracker.id)
-                })
-              }
-            })
-          }
-
-          // Load loose trackers
-          if (data.loose) {
-            data.loose.forEach((trackerData: any) => {
-              const tracker: Tracker = {
-                id: trackerData.id,
-                type: trackerData.type,
-                title: trackerData.title,
-                x: trackerData.x,
-                y: trackerData.y,
-                ext: trackerData.ext
-              }
-              
-              s.trackersById[tracker.id] = tracker
-              s.looseIds.push(tracker.id)
-              allTrackerIds.push(tracker.id)
-            })
+            // Load text elements
+            if (data.textElements) {
+              data.textElements.forEach((textData: any) => {
+                const text: TextElement = {
+                  id: String(textData.id),
+                  x: textData.x ?? 0,
+                  y: textData.y ?? 0,
+                  text: textData.text ?? 'Novo texto',
+                  fontSize: textData.fontSize ?? 14,
+                  color: textData.color ?? '#000000',
+                  fontWeight: textData.fontWeight ?? 'normal',
+                  fontStyle: textData.fontStyle ?? 'normal',
+                  textDecoration: textData.textDecoration ?? 'none',
+                  textAlign: textData.textAlign ?? 'left'
+                }
+                s.textElementsById[text.id] = text
+                s.textElementIds.push(text.id)
+              })
+            }
           }
         })
       } catch (error) {
         console.error('Error loading JSON data:', error)
+      }
+    },
+
+    loadFromApi: async (projectsId: number, fieldsId: number) => {
+      try {
+        // Faz GET na API com os parâmetros
+        const params = new URLSearchParams({
+          projects_id: projectsId.toString(),
+          fields_id: fieldsId.toString()
+        })
+        
+        const response = await fetch(`https://x4t7-ilri-ywed.n7d.xano.io/api:6L6t8cws/trackers-map?${params.toString()}`)
+        
+        if (!response.ok) {
+          const errorText = await response.text()
+          throw new Error(`Erro ao carregar: ${response.status} ${response.statusText} - ${errorText}`)
+        }
+        
+        const data = await response.json()
+        
+        // A API retorna um array de seções diretamente (formato do banco de dados)
+        // A função loadFromJson já sabe processar esse formato
+        const jsonString = JSON.stringify(data)
+        get().loadFromJson(jsonString)
+        return { success: true }
+      } catch (error) {
+        console.error('Erro ao carregar da API:', error)
+        return { 
+          success: false, 
+          error: error instanceof Error ? error.message : 'Erro desconhecido ao carregar'
+        }
       }
     },
 
@@ -1117,6 +1737,138 @@ export const useLayoutStore = create<SectionState & LayoutActions>()(
       link.click()
       document.body.removeChild(link)
       URL.revokeObjectURL(url)
+    },
+
+    saveToApi: async () => {
+      try {
+        const s = get()
+        const serializedData = JSON.parse(s.serialize())
+        
+        // Remove stakeStatusIds dos trackers (não faz parte do formato da API de criação)
+        const cleanGroups = serializedData.groups.map((group: any) => ({
+          ...group,
+          rows: group.rows.map((row: any) => ({
+            ...row,
+            trackers: row.trackers.map((tracker: any) => {
+              const { stakeStatusIds, ...trackerWithoutStatus } = tracker
+              return trackerWithoutStatus
+            })
+          }))
+        }))
+        
+        const cleanStandaloneRows = serializedData.standaloneRows.map((row: any) => ({
+          ...row,
+          trackers: row.trackers.map((tracker: any) => {
+            const { stakeStatusIds, ...trackerWithoutStatus } = tracker
+            return trackerWithoutStatus
+          })
+        }))
+        
+        const cleanLoose = serializedData.loose.map((tracker: any) => {
+          const { stakeStatusIds, ...trackerWithoutStatus } = tracker
+          return trackerWithoutStatus
+        })
+        
+        // Formata os dados no formato esperado pela API
+        const apiPayload = {
+          json_map: {
+            groups: cleanGroups,
+            standaloneRows: cleanStandaloneRows,
+            loose: cleanLoose,
+            textElements: serializedData.textElements,
+            settings: serializedData.settings
+          },
+          projects_id: 7
+        }
+        
+        const response = await fetch('https://x4t7-ilri-ywed.n7d.xano.io/api:6L6t8cws/trackers-map', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(apiPayload)
+        })
+        
+        if (!response.ok) {
+          const errorText = await response.text()
+          throw new Error(`Erro ao salvar: ${response.status} ${response.statusText} - ${errorText}`)
+        }
+        
+        return { success: true }
+      } catch (error) {
+        console.error('Erro ao salvar na API:', error)
+        return { 
+          success: false, 
+          error: error instanceof Error ? error.message : 'Erro desconhecido ao salvar'
+        }
+      }
+    },
+
+    exportToDatabaseFormat: () => {
+      const s = get()
+      
+      // Agrupa rows por groupId (sections_id)
+      const rowsBySection = new Map<string, Row[]>()
+      
+      s.rows.forEach((row) => {
+        const sectionId = row.groupId || 'standalone'
+        if (!rowsBySection.has(sectionId)) {
+          rowsBySection.set(sectionId, [])
+        }
+        rowsBySection.get(sectionId)!.push(row)
+      })
+      
+      // Converte para o formato do banco
+      const result: any[] = []
+      
+      rowsBySection.forEach((rowsInSection, sectionId) => {
+        // Para cada row na seção
+        rowsInSection.forEach((row, rowIndex) => {
+          const rowData: any = {
+            id: parseInt(row.id.replace('row_', '')) || rowIndex + 1,
+            row_number: rowIndex + 1,
+            sections_id: sectionId === 'standalone' ? null : parseInt(sectionId) || null,
+            list_rows_trackers: row.trackerIds.map((trackerId, trackerIndex) => {
+              const tracker = s.trackersById[trackerId]
+              if (!tracker) return null
+              
+              // Cria list_trackers_stakes baseado no stakeStatusIds
+              const list_trackers_stakes: any[] = []
+              if (tracker.ext && tracker.stakeStatusIds) {
+                // Precisamos mapear cada status_id para uma estaca
+                // Como não temos os IDs das estacas individuais, vamos criar uma estrutura
+                // que pode ser usada para atualizar o banco
+                tracker.stakeStatusIds.forEach((statusId, stakeIndex) => {
+                  // A posição da estaca seria A, B, C, etc.
+                  const position = String.fromCharCode(65 + stakeIndex) // A=65, B=66, etc.
+                  
+                  list_trackers_stakes.push({
+                    // id: seria o ID do banco se já existir, ou null para criar novo
+                    rows_trackers_id: parseInt(tracker.id.replace('t_', '')) || trackerIndex + 1,
+                    stakes_id: (tracker.ext?.id || 0) * 100 + stakeIndex, // ID temporário baseado no tracker e posição
+                    stakes_statuses_id: statusId ?? 1, // Default para 1 (Não cravada) se null
+                    position: position
+                  })
+                })
+              }
+              
+              return {
+                id: parseInt(tracker.id.replace('t_', '')) || trackerIndex + 1,
+                position: String(trackerIndex + 1),
+                rows_id: parseInt(row.id.replace('row_', '')) || rowIndex + 1,
+                trackers_id: tracker.ext?.id || null,
+                rows_trackers_statuses_id: 1, // Default status
+                rowY: tracker.rowY ?? 0,
+                list_trackers_stakes: list_trackers_stakes
+              }
+            }).filter(Boolean)
+          }
+          
+          result.push(rowData)
+        })
+      })
+      
+      return JSON.stringify(result, null, 2)
     },
 
     // History: undo/redo via snapshot serialization
@@ -1146,9 +1898,107 @@ export const useLayoutStore = create<SectionState & LayoutActions>()(
     setRowGroupOffsetX: (rowId, offsetX) => {
       set((s) => {
         const row = s.rows.find(r => r.id === rowId)
-        if (row) row.groupOffsetX = Math.round(offsetX)
+        if (!row) return
+
+        row.groupOffsetX = Math.round(offsetX)
+
+        if (!row.groupId) return
+
+        const relatedRows = s.rows.filter(r => r.groupId === row.groupId)
+        if (!relatedRows.length) return
+
+        const minOffset = Math.min(...relatedRows.map(r => r.groupOffsetX ?? 0))
+
+        if (minOffset !== 0) {
+          for (const r of relatedRows) {
+            r.groupOffsetX = Math.round((r.groupOffsetX ?? 0) - minOffset)
+          }
+        }
       })
     },
+
+    resetGroupRowOffsets: (groupId) => {
+      const snap = get().serialize()
+      set((s) => { s.historyPast.push(snap); s.historyFuture = [] })
+      set((s) => {
+        const group = s.rowGroups.find(g => g.id === groupId)
+        if (!group) return
+
+        // Reset all row offsets in the group to 0
+        for (const rowId of group.rowIds) {
+          const row = s.rows.find(r => r.id === rowId)
+          if (row) {
+            row.groupOffsetX = 0
+          }
+        }
+      })
+    },
+
+    // Text element actions
+    addTextElement: (x, y) => {
+      const snap = get().serialize()
+      set((s) => { s.historyPast.push(snap); s.historyFuture = [] })
+      const id = nextId('text')
+      set((s) => {
+        s.textElementsById[id] = {
+          id,
+          x: snapToGrid(x, GRID),
+          y: snapToGrid(y, GRID),
+          text: 'Novo texto',
+          fontSize: 14,
+          color: '#000000',
+          fontWeight: 'normal',
+          fontStyle: 'normal',
+          textDecoration: 'none',
+          textAlign: 'left'
+        }
+        s.textElementIds.push(id)
+      })
+      return id
+    },
+
+    updateTextElement: (id, updates, saveHistory = false) => {
+      if (saveHistory) {
+        const snap = get().serialize()
+        set((s) => { s.historyPast.push(snap); s.historyFuture = [] })
+      }
+      set((s) => {
+        const text = s.textElementsById[id]
+        if (!text) return
+        Object.assign(text, updates)
+      })
+    },
+
+    removeTextElement: (id) => {
+      const snap = get().serialize()
+      set((s) => { s.historyPast.push(snap); s.historyFuture = [] })
+      set((s) => {
+        s.textElementIds = s.textElementIds.filter((tid) => tid !== id)
+        delete s.textElementsById[id]
+        s.selectedIds = s.selectedIds.filter((tid) => tid !== id)
+        if (s.draggingTextId === id) {
+          s.draggingTextId = undefined
+          s.dragTextStart = undefined
+        }
+      })
+    },
+
+    moveTextElementByDelta: (id, dx, dy) => {
+      set((s) => {
+        const text = s.textElementsById[id]
+        if (!text) return
+        const start = s.dragTextStart ?? { x: text.x, y: text.y }
+        text.x = snapToGrid(start.x + dx, GRID)
+        text.y = snapToGrid(start.y + dy, GRID)
+      })
+    },
+
+    beginDragText: (id) => {
+      const text = get().textElementsById[id]
+      set({ draggingTextId: id, dragTextStart: { x: text?.x ?? 0, y: text?.y ?? 0 } })
+    },
+
+    endDragText: () => set({ draggingTextId: undefined, dragTextStart: undefined }),
   }))
 )
 

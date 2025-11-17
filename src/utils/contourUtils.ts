@@ -6,7 +6,7 @@ export type RowBox = { left: number; right: number; top: number; bottom: number 
 export type TrackerBox = { left: number; right: number; top: number; bottom: number; trackerId: string }
 
 const GEOM = {
-  MARGIN: 12, // Margem ao redor dos trackers no contorno (aumentado para garantir espaço)
+  MARGIN: 6, // Margem ao redor dos trackers no contorno (mais enxuto para evitar espaços exagerados)
 }
 
 const align = (v: number) => Math.round(v) + 0.5
@@ -66,7 +66,7 @@ export function calculateRowBoxesFromDOM(rootElement: HTMLElement | null): RowBo
 
     boxes.push({
       left: align(left - GEOM.MARGIN),
-      right: align(right + GEOM.MARGIN + 12), // +12 para botão de remover e espaço extra
+      right: align(right + GEOM.MARGIN + 8), // +8 cobre o botão de remover e um respiro mínimo
       top: align(isFirstRow ? top - 12 : top), // Margem extra no topo apenas para a primeira row
       bottom: align(isLastRow ? bottom + GEOM.MARGIN : bottom) // Margem extra no bottom apenas para a última row
     })
@@ -127,7 +127,7 @@ export function calculateBoxesOffset(rowBoxes: RowBox[]): { offsetX: number; off
  * @returns Objeto com width e height
  */
 export function calculateGroupDimensions(rowBoxes: RowBox[]): { width: number; height: number; offsetX?: number; offsetY?: number } {
-  if (!rowBoxes.length) return { width: 400, height: 200, offsetX: 0, offsetY: 0 }
+  if (!rowBoxes.length) return { width: 120, height: 120, offsetX: 0, offsetY: 0 }
   
   const maxRight = Math.max(...rowBoxes.map(b => b.right))
   const maxBottom = Math.max(...rowBoxes.map(b => b.bottom))
@@ -140,13 +140,14 @@ export function calculateGroupDimensions(rowBoxes: RowBox[]): { width: number; h
   
   // Calcular a largura e altura reais necessárias
   // Considera desde o mínimo até o máximo (incluindo margens já calculadas nas boxes)
-  // Adiciona o offset se necessário para garantir que valores negativos sejam cobertos
-  const width = Math.ceil(maxRight - minLeft) + offsetX // Não adiciona margem extra aqui, já está nas boxes
-  const height = Math.ceil(maxBottom - minTop) + offsetY // Não adiciona margem extra aqui, já está nas boxes
+  // Não adiciona offsetX à largura para evitar espaço extra à esquerda
+  // O offsetX é apenas para ajustar o viewBox do SVG se necessário
+  const width = Math.ceil(maxRight - minLeft) // Largura real sem adicionar offset extra
+  const height = Math.ceil(maxBottom - minTop) + offsetY // Altura com offset se necessário
   
   return { 
-    width: Math.max(200, width), // Reduzido mínimo de 400 para 200
-    height: Math.max(100, height), // Reduzido mínimo de 200 para 100
+    width: Math.max(60, width), // largura mínima compatível com 1 tracker + paddings
+    height: Math.max(80, height), // altura mínima para manter hit-area
     offsetX,
     offsetY
   }

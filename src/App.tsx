@@ -1,14 +1,51 @@
+import { BrowserRouter, Routes, Route, Link, useLocation } from 'react-router-dom'
 import { Canvas } from './components/Canvas'
+import { ViewCanvas } from './components/ViewCanvas'
+import { Eye } from 'lucide-react'
+
+function Header() {
+  const location = useLocation()
+  const isViewMode = location.pathname === '/view'
+
+  return (
+    <header className="border-b bg-white p-3">
+      <div className="flex items-center justify-between">
+        <h1 className="text-lg font-semibold">Criar Mapa de Tracker</h1>
+        <div className="flex items-center gap-3">
+          {!isViewMode ? (
+            <Link
+              to="/view"
+              className="flex items-center gap-2 rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 transition-colors shadow-sm"
+            >
+              <Eye size={16} />
+              Visualizar Mapa
+            </Link>
+          ) : (
+            <Link
+              to="/"
+              className="flex items-center gap-2 rounded-md bg-gray-600 px-4 py-2 text-sm font-medium text-white hover:bg-gray-700 transition-colors shadow-sm"
+            >
+              Voltar para Edição
+            </Link>
+          )}
+        </div>
+      </div>
+    </header>
+  )
+}
 
 export default function App() {
   return (
-    <div className="flex h-screen flex-col">
-      <header className="border-b bg-white p-3">
-        <h1 className="text-lg font-semibold">Criar Seção</h1>
-      </header>
-      <div className="min-h-0 flex-1">
-        <Canvas />
+    <BrowserRouter>
+      <div className="flex h-screen flex-col">
+        <Header />
+        <div className="min-h-0 flex-1">
+          <Routes>
+            <Route path="/" element={<Canvas />} />
+            <Route path="/view" element={<ViewCanvas />} />
+          </Routes>
+        </div>
       </div>
-    </div>
+    </BrowserRouter>
   )
 }
