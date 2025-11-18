@@ -20,6 +20,7 @@ import type { ExternalTracker } from '../data/trackersCatalog'
 import { useLayoutStore as useStore } from '../store/layoutStore'
 import { useTrackersStore } from '../store/trackersStore'
 import { ROW_GRID_X, ROW_GRID_Y, TRACKER_GRID, GRID } from '../utils/gridConstants'
+import { useAppParams } from '../context/AppParamsContext'
 
 export function Canvas() {
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 0 } }))
@@ -86,6 +87,7 @@ export function Canvas() {
   const [isSaving, setIsSaving] = useState(false)
   const [isLoadModalOpen, setIsLoadModalOpen] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
+  const appParams = useAppParams()
 
   // Mouse wheel handler - standard canvas behavior
   const handleWheel = useCallback((e: WheelEvent) => {
@@ -123,6 +125,35 @@ export function Canvas() {
   useEffect(() => {
     useTrackersStore.getState().fetchTrackers()
   }, [])
+
+  // Auto-load map from API when URL parameters are present
+  // Se fieldId != 0 → modo edição (carrega dados)
+  // Se fieldId == 0 → modo criação (tela vazia)
+  const hasAutoLoadedRef = useRef(false)
+  useEffect(() => {
+    if (appParams.projectId && appParams.fieldId && !hasAutoLoadedRef.current) {
+      const projectIdNum = parseInt(appParams.projectId, 10)
+      const fieldIdNum = parseInt(appParams.fieldId, 10)
+      
+      // Só carrega se fieldId != 0 (modo edição)
+      if (!isNaN(projectIdNum) && !isNaN(fieldIdNum) && fieldIdNum !== 0) {
+        hasAutoLoadedRef.current = true
+        setIsLoading(true)
+        loadFromApi(projectIdNum, fieldIdNum, appParams.authToken)
+          .then((result) => {
+            setIsLoading(false)
+            if (!result.success) {
+              console.warn('Erro ao carregar mapa automaticamente:', result.error)
+            }
+          })
+          .catch((error) => {
+            setIsLoading(false)
+            console.error('Erro ao carregar mapa automaticamente:', error)
+          })
+      }
+      // Se fieldId == 0, não carrega nada (modo criação - tela vazia)
+    }
+  }, [appParams.projectId, appParams.fieldId, appParams.authToken, loadFromApi])
 
   // Add wheel event listener to canvas
   useEffect(() => {
@@ -772,7 +803,9 @@ export function Canvas() {
                 className="w-full h-10 rounded-[12px] bg-blue-600 px-3 text-white text-xs font-medium hover:bg-blue-700 transition-colors shadow-sm disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
                 onClick={async () => {
                   setIsSaving(true)
-                  const result = await saveToApi()
+                  const projectId = appParams.projectId ? parseInt(appParams.projectId, 10) : null
+                  const fieldId = appParams.fieldId ? parseInt(appParams.fieldId, 10) : null
+                  const result = await saveToApi(projectId, fieldId, appParams.authToken)
                   setIsSaving(false)
                   if (result.success) {
                     alert('Mapa salvo com sucesso!')
@@ -1037,7 +1070,7 @@ export function Canvas() {
         onClose={() => setIsLoadModalOpen(false)}
         onLoad={async (projectsId, fieldsId) => {
           setIsLoading(true)
-          const result = await loadFromApi(projectsId, fieldsId)
+          const result = await loadFromApi(projectsId, fieldsId, appParams.authToken)
           setIsLoading(false)
           if (result.success) {
             setIsLoadModalOpen(false)

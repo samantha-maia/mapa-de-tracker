@@ -147,10 +147,10 @@ export type LayoutActions = {
   setTrackerRowY: (trackerId: string, rowY: number) => void
   setRowFinalized: (rowId: string, isFinalized: boolean, contourPath?: string) => void
   loadFromJson: (jsonData: string) => void
-  loadFromApi: (projectsId: number, fieldsId: number) => Promise<{ success: boolean; error?: string }> // Carrega o mapa da API
+  loadFromApi: (projectsId: number, fieldsId: number, authToken?: string | null) => Promise<{ success: boolean; error?: string }> // Carrega o mapa da API
   downloadJson: () => void
   exportToDatabaseFormat: () => string // Exporta no formato do banco de dados
-  saveToApi: () => Promise<{ success: boolean; error?: string }> // Salva o mapa na API
+  saveToApi: (projectId?: number | null, fieldId?: number | null, authToken?: string | null) => Promise<{ success: boolean; error?: string }> // Salva o mapa na API
   // history
   undo: () => void
   redo: () => void
@@ -1686,7 +1686,7 @@ export const useLayoutStore = create<SectionState & LayoutActions>()(
       }
     },
 
-    loadFromApi: async (projectsId: number, fieldsId: number) => {
+    loadFromApi: async (projectsId: number, fieldsId: number, authToken?: string | null) => {
       try {
         // Faz GET na API com os parâmetros
         const params = new URLSearchParams({
@@ -1694,7 +1694,17 @@ export const useLayoutStore = create<SectionState & LayoutActions>()(
           fields_id: fieldsId.toString()
         })
         
-        const response = await fetch(`https://x4t7-ilri-ywed.n7d.xano.io/api:6L6t8cws/trackers-map?${params.toString()}`)
+        const headers: HeadersInit = {
+          'Content-Type': 'application/json',
+        }
+        
+        if (authToken) {
+          headers['Authorization'] = `Bearer ${authToken}`
+        }
+        
+        const response = await fetch(`https://x4t7-ilri-ywed.n7d.xano.io/api:6L6t8cws/trackers-map?${params.toString()}`, {
+          headers
+        })
         
         if (!response.ok) {
           const errorText = await response.text()
@@ -1739,7 +1749,7 @@ export const useLayoutStore = create<SectionState & LayoutActions>()(
       URL.revokeObjectURL(url)
     },
 
-    saveToApi: async () => {
+    saveToApi: async (projectId?: number | null, fieldId?: number | null, authToken?: string | null) => {
       try {
         const s = get()
         const serializedData = JSON.parse(s.serialize())
@@ -1769,8 +1779,11 @@ export const useLayoutStore = create<SectionState & LayoutActions>()(
           return trackerWithoutStatus
         })
         
+        // Usa projectId da URL ou fallback para 7
+        const finalProjectId = projectId || 7
+        
         // Formata os dados no formato esperado pela API
-        const apiPayload = {
+        const apiPayload: any = {
           json_map: {
             groups: cleanGroups,
             standaloneRows: cleanStandaloneRows,
@@ -1778,14 +1791,25 @@ export const useLayoutStore = create<SectionState & LayoutActions>()(
             textElements: serializedData.textElements,
             settings: serializedData.settings
           },
-          projects_id: 7
+          projects_id: finalProjectId
+        }
+        
+        // Adiciona fields_id se fornecido
+        if (fieldId) {
+          apiPayload.fields_id = fieldId
+        }
+        
+        const headers: HeadersInit = {
+          'Content-Type': 'application/json',
+        }
+        
+        if (authToken) {
+          headers['Authorization'] = `Bearer ${authToken}`
         }
         
         const response = await fetch('https://x4t7-ilri-ywed.n7d.xano.io/api:6L6t8cws/trackers-map', {
           method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
+          headers,
           body: JSON.stringify(apiPayload)
         })
         

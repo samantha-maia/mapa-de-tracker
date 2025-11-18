@@ -5,6 +5,7 @@ import { Tracker } from './Tracker'
 import { TextElement } from './TextElement'
 import { useLayoutStore } from '../store/layoutStore'
 import { GRID } from '../utils/gridConstants'
+import { useAppParams } from '../context/AppParamsContext'
 
 export function ViewCanvas() {
   const canvasRef = useRef<HTMLDivElement | null>(null)
@@ -21,6 +22,27 @@ export function ViewCanvas() {
   const setPan = useLayoutStore((s) => s.setPan)
   const resetZoom = useLayoutStore((s) => s.resetZoom)
   const resetPan = useLayoutStore((s) => s.resetPan)
+  const loadFromApi = useLayoutStore((s) => s.loadFromApi)
+  const appParams = useAppParams()
+
+  // Auto-load map from API when URL parameters are present
+  // Para visualização, só carrega se fieldId != 0
+  const hasAutoLoadedRef = useRef(false)
+  useEffect(() => {
+    if (appParams.projectId && appParams.fieldId && !hasAutoLoadedRef.current) {
+      const projectIdNum = parseInt(appParams.projectId, 10)
+      const fieldIdNum = parseInt(appParams.fieldId, 10)
+      
+      // Só carrega se fieldId != 0 (não faz sentido visualizar um mapa que não existe)
+      if (!isNaN(projectIdNum) && !isNaN(fieldIdNum) && fieldIdNum !== 0) {
+        hasAutoLoadedRef.current = true
+        loadFromApi(projectIdNum, fieldIdNum, appParams.authToken)
+          .catch((error) => {
+            console.error('Erro ao carregar mapa automaticamente:', error)
+          })
+      }
+    }
+  }, [appParams.projectId, appParams.fieldId, appParams.authToken, loadFromApi])
 
   // Mouse wheel handler for zoom and pan
   const handleWheel = useCallback((e: WheelEvent) => {
