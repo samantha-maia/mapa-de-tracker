@@ -81,7 +81,7 @@ export function TextEditorPanel() {
               onClick={() => updateTextElement(textElement.id, { 
                 fontWeight: textElement.fontWeight === 'bold' ? 'normal' : 'bold' 
               })}
-              className={`flex-1 rounded-[12px] px-3 py-2 text-xs font-medium flex items-center justify-center gap-1.5 transition-colors ${
+              className={`flex-1 h-10 rounded-[12px] px-3 text-xs font-medium flex items-center justify-center gap-1.5 transition-colors ${
                 textElement.fontWeight === 'bold'
                   ? 'bg-blue-600 text-white hover:bg-blue-700'
                   : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
@@ -95,7 +95,7 @@ export function TextEditorPanel() {
               onClick={() => updateTextElement(textElement.id, { 
                 fontStyle: textElement.fontStyle === 'italic' ? 'normal' : 'italic' 
               })}
-              className={`flex-1 rounded-[12px] px-3 py-2 text-xs font-medium flex items-center justify-center gap-1.5 transition-colors ${
+              className={`flex-1 h-10 rounded-[12px] px-3 text-xs font-medium flex items-center justify-center gap-1.5 transition-colors ${
                 textElement.fontStyle === 'italic'
                   ? 'bg-blue-600 text-white hover:bg-blue-700'
                   : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
@@ -109,7 +109,7 @@ export function TextEditorPanel() {
               onClick={() => updateTextElement(textElement.id, { 
                 textDecoration: textElement.textDecoration === 'underline' ? 'none' : 'underline' 
               })}
-              className={`flex-1 rounded-[12px] px-3 py-2 text-xs font-medium flex items-center justify-center gap-1.5 transition-colors ${
+              className={`flex-1 h-10 rounded-[12px] px-3 text-xs font-medium flex items-center justify-center gap-1.5 transition-colors ${
                 textElement.textDecoration === 'underline'
                   ? 'bg-blue-600 text-white hover:bg-blue-700'
                   : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
@@ -130,7 +130,7 @@ export function TextEditorPanel() {
           <div className="flex gap-2">
             <button
               onClick={() => updateTextElement(textElement.id, { textAlign: 'left' })}
-              className={`flex-1 rounded-[12px] px-2 py-1.5 text-xs flex items-center justify-center transition-colors ${
+              className={`flex-1 h-10 rounded-[12px] px-2 text-xs font-medium flex items-center justify-center transition-colors ${
                 textElement.textAlign === 'left'
                   ? 'bg-blue-600 text-white hover:bg-blue-700'
                   : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
@@ -141,7 +141,7 @@ export function TextEditorPanel() {
             </button>
             <button
               onClick={() => updateTextElement(textElement.id, { textAlign: 'center' })}
-              className={`flex-1 rounded-[12px] px-2 py-1.5 text-xs flex items-center justify-center transition-colors ${
+              className={`flex-1 h-10 rounded-[12px] px-2 text-xs font-medium flex items-center justify-center transition-colors ${
                 textElement.textAlign === 'center'
                   ? 'bg-blue-600 text-white hover:bg-blue-700'
                   : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
@@ -152,7 +152,7 @@ export function TextEditorPanel() {
             </button>
             <button
               onClick={() => updateTextElement(textElement.id, { textAlign: 'right' })}
-              className={`flex-1 rounded-[12px] px-2 py-1.5 text-xs flex items-center justify-center transition-colors ${
+              className={`flex-1 h-10 rounded-[12px] px-2 text-xs font-medium flex items-center justify-center transition-colors ${
                 textElement.textAlign === 'right'
                   ? 'bg-blue-600 text-white hover:bg-blue-700'
                   : 'bg-gray-200 text-gray-700 hover:bg-gray-300'

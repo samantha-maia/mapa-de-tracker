@@ -554,17 +554,17 @@ export function Canvas() {
           {/* Actions Section */}
           <div className="space-y-4">
             {/* Row Actions */}
-            <div className="rounded-lg border border-gray-200 bg-gray-50 p-3">
+            <div className="rounded-lg border border-[#daeef6] border-solid-1 bg-white p-3">
               <h4 className="text-xs font-semibold text-gray-700 mb-2 uppercase tracking-wide">Fileiras</h4>
               <div className="space-y-2">
                 <button 
-                  className="w-full rounded-[12px] bg-blue-600 px-3 py-2 text-white text-sm font-medium hover:bg-blue-700 transition-colors shadow-sm" 
+                  className="w-full h-10 rounded-[12px] bg-blue-600 px-3 text-white text-xs font-medium hover:bg-blue-700 transition-colors shadow-sm flex items-center justify-center" 
                   onClick={() => addEmptyRow()}
                 >
                   + Criar Row
                 </button>
                 <button 
-                  className="w-full rounded-[12px] bg-emerald-600 px-3 py-2 text-white text-sm font-medium hover:bg-emerald-700 transition-colors shadow-sm disabled:opacity-50 disabled:cursor-not-allowed" 
+                  className="w-full h-10 rounded-[12px] bg-emerald-600 px-3 text-white text-xs font-medium hover:bg-emerald-700 transition-colors shadow-sm disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center" 
                   onClick={() => {
                     const result = groupSelectedIntoRow()
                     if (!result) {
@@ -584,17 +584,17 @@ export function Canvas() {
             </div>
 
             {/* Group Actions */}
-            <div className="rounded-lg border border-gray-200 bg-gray-50 p-3">
+            <div className="rounded-lg border border-[#daeef6] border-solid-1 bg-white p-3">
               <h4 className="text-xs font-semibold text-gray-700 mb-2 uppercase tracking-wide">Grupos</h4>
               <div className="space-y-2">
                 <button 
-                  className="w-full rounded-[12px] bg-purple-600 px-3 py-2 text-white text-sm font-medium hover:bg-purple-700 transition-colors shadow-sm" 
+                  className="w-full h-10 rounded-[12px] bg-purple-600 px-3 text-white text-xs font-medium hover:bg-purple-700 transition-colors shadow-sm flex items-center justify-center" 
                   onClick={() => addEmptyRowGroup()}
                 >
                   + Criar Grupo
                 </button>
                 <button 
-                  className="w-full rounded-[12px] bg-indigo-600 px-3 py-2 text-white text-sm font-medium hover:bg-indigo-700 transition-colors shadow-sm" 
+                  className="w-full h-10 rounded-[12px] bg-indigo-600 px-3 text-white text-xs font-medium hover:bg-indigo-700 transition-colors shadow-sm flex items-center justify-center" 
                   onClick={() => groupSelectedRowsIntoGroup()}
                 >
                   Agrupar Fileiras
@@ -603,11 +603,11 @@ export function Canvas() {
             </div>
 
             {/* Text Actions */}
-            <div className="rounded-lg border border-gray-200 bg-gray-50 p-3">
+            <div className="rounded-lg border border-[#daeef6] border-solid-1 bg-white p-3">
               <h4 className="text-xs font-semibold text-gray-700 mb-2 uppercase tracking-wide">Texto</h4>
               <div className="space-y-2">
                 <button 
-                  className="w-full rounded-[12px] bg-teal-600 px-3 py-2 text-white text-sm font-medium hover:bg-teal-700 transition-colors shadow-sm" 
+                  className="w-full h-10 rounded-[12px] bg-teal-600 px-3 text-white text-xs font-medium hover:bg-teal-700 transition-colors shadow-sm flex items-center justify-center" 
                   onClick={() => {
                     const rect = canvasRef.current?.getBoundingClientRect()
                     if (rect) {
@@ -630,13 +630,13 @@ export function Canvas() {
 
             {/* Selection Actions */}
             {selectedIds.length > 0 && (
-              <div className="rounded-lg border border-gray-200 bg-gray-50 p-3">
+              <div className="rounded-lg border border-[#daeef6] border-solid-1 bg-white p-3">
                 <h4 className="text-xs font-semibold text-gray-700 mb-2 uppercase tracking-wide">
                   Selecionados ({selectedIds.length})
                 </h4>
                 <div className="space-y-2">
                   <button 
-                    className="w-full rounded-[12px] bg-orange-600 px-3 py-2 text-white text-sm font-medium hover:bg-orange-700 transition-colors shadow-sm" 
+                    className="w-full h-10 rounded-[12px] bg-orange-600 px-3 text-white text-xs font-medium hover:bg-orange-700 transition-colors shadow-sm flex items-center justify-center" 
                     onClick={() => duplicateSelected()}
                     title="Ctrl+V para duplicar"
                   >
@@ -648,46 +648,46 @@ export function Canvas() {
             
             {/* Alignment Controls */}
             {selectedIds.length >= 2 && (
-              <div className="rounded-lg border border-gray-200 bg-gray-50 p-3">
+              <div className="rounded-lg border border-[#daeef6] border-solid-1 bg-white p-3">
                 <h4 className="text-xs font-semibold text-gray-700 mb-3 uppercase tracking-wide">Alinhamento</h4>
                 <div className="grid grid-cols-3 gap-1.5">
                   <button 
-                    className="rounded-[12px] bg-gray-600 px-2 py-1.5 text-white text-xs flex items-center justify-center hover:bg-gray-700 transition-colors" 
+                    className="h-10 rounded-[12px] bg-gray-600 px-2 text-white text-xs font-medium flex items-center justify-center hover:bg-gray-700 transition-colors" 
                     onClick={() => alignSelected('left')}
                     title="Alinhar à esquerda"
                   >
                     <AlignLeft size={14} />
                   </button>
                   <button 
-                    className="rounded-[12px] bg-gray-600 px-2 py-1.5 text-white text-xs flex items-center justify-center hover:bg-gray-700 transition-colors" 
+                    className="h-10 rounded-[12px] bg-gray-600 px-2 text-white text-xs font-medium flex items-center justify-center hover:bg-gray-700 transition-colors" 
                     onClick={() => alignSelected('center')}
                     title="Centralizar horizontalmente"
                   >
                     <AlignCenter size={14} />
                   </button>
                   <button 
-                    className="rounded-[12px] bg-gray-600 px-2 py-1.5 text-white text-xs flex items-center justify-center hover:bg-gray-700 transition-colors" 
+                    className="h-10 rounded-[12px] bg-gray-600 px-2 text-white text-xs font-medium flex items-center justify-center hover:bg-gray-700 transition-colors" 
                     onClick={() => alignSelected('right')}
                     title="Alinhar à direita"
                   >
                     <AlignRight size={14} />
                   </button>
                   <button 
-                    className="rounded-[12px] bg-gray-600 px-2 py-1.5 text-white text-xs flex items-center justify-center hover:bg-gray-700 transition-colors" 
+                    className="h-10 rounded-[12px] bg-gray-600 px-2 text-white text-xs font-medium flex items-center justify-center hover:bg-gray-700 transition-colors" 
                     onClick={() => alignSelected('top')}
                     title="Alinhar ao topo"
                   >
                     <AlignStartVertical size={14} />
                   </button>
                   <button 
-                    className="rounded-[12px] bg-gray-600 px-2 py-1.5 text-white text-xs flex items-center justify-center hover:bg-gray-700 transition-colors" 
+                    className="h-10 rounded-[12px] bg-gray-600 px-2 text-white text-xs font-medium flex items-center justify-center hover:bg-gray-700 transition-colors" 
                     onClick={() => alignSelected('middle')}
                     title="Centralizar verticalmente"
                   >
                     <AlignCenterVertical size={14} />
                   </button>
                   <button 
-                    className="rounded-[12px] bg-gray-600 px-2 py-1.5 text-white text-xs flex items-center justify-center hover:bg-gray-700 transition-colors" 
+                    className="h-10 rounded-[12px] bg-gray-600 px-2 text-white text-xs font-medium flex items-center justify-center hover:bg-gray-700 transition-colors" 
                     onClick={() => alignSelected('bottom')}
                     title="Alinhar à base"
                   >
@@ -699,11 +699,11 @@ export function Canvas() {
 
             {/* Distribution Controls */}
             {selectedIds.length >= 3 && (
-              <div className="rounded-lg border border-gray-200 bg-gray-50 p-3">
+              <div className="rounded-lg border border-[#daeef6] border-solid-1 bg-white p-3">
                 <h4 className="text-xs font-semibold text-gray-700 mb-3 uppercase tracking-wide">Distribuir</h4>
                 <div className="flex gap-2">
                   <button 
-                    className="flex-1 rounded-[12px] bg-purple-600 px-3 py-2 text-white text-xs font-medium flex items-center justify-center gap-1.5 hover:bg-purple-700 transition-colors shadow-sm" 
+                    className="flex-1 h-10 rounded-[12px] bg-purple-600 px-3 text-white text-xs font-medium flex items-center justify-center gap-1.5 hover:bg-purple-700 transition-colors shadow-sm" 
                     onClick={() => distributeSelected('horizontal')}
                     title="Distribuir horizontalmente"
                   >
@@ -711,7 +711,7 @@ export function Canvas() {
                     <span>Horizontal</span>
                   </button>
                   <button 
-                    className="flex-1 rounded-[12px] bg-purple-600 px-3 py-2 text-white text-xs font-medium flex items-center justify-center gap-1.5 hover:bg-purple-700 transition-colors shadow-sm" 
+                    className="flex-1 h-10 rounded-[12px] bg-purple-600 px-3 text-white text-xs font-medium flex items-center justify-center gap-1.5 hover:bg-purple-700 transition-colors shadow-sm" 
                     onClick={() => distributeSelected('vertical')}
                     title="Distribuir verticalmente"
                   >
@@ -723,7 +723,7 @@ export function Canvas() {
             )}
             
             {/* Keyboard Shortcuts */}
-            <div className="rounded-lg border border-gray-200 bg-gray-50 p-3">
+            <div className="rounded-lg border border-[#daeef6] border-solid-1 bg-white p-3">
               <h4 className="text-xs font-semibold text-gray-700 mb-2 uppercase tracking-wide">Atalhos</h4>
               <div className="space-y-1 text-[10px] text-gray-600">
                 <div className="flex justify-between">
@@ -766,10 +766,10 @@ export function Canvas() {
             </div>
             
             {/* File Actions */}
-            <div className="rounded-lg border border-gray-200 bg-gray-50 p-3 space-y-2">
+            <div className="rounded-lg border border-[#daeef6] border-solid-1 bg-white p-3 space-y-2">
               <h4 className="text-xs font-semibold text-gray-700 mb-2 uppercase tracking-wide">Arquivo</h4>
               <button
-                className="w-full rounded-[12px] bg-blue-600 px-3 py-2 text-white text-sm font-medium hover:bg-blue-700 transition-colors shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
+                className="w-full h-10 rounded-[12px] bg-blue-600 px-3 text-white text-xs font-medium hover:bg-blue-700 transition-colors shadow-sm disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
                 onClick={async () => {
                   setIsSaving(true)
                   const result = await saveToApi()
@@ -785,19 +785,19 @@ export function Canvas() {
                 {isSaving ? '⏳ Salvando...' : '💾 Salvar na API'}
               </button>
               <button
-                className="w-full rounded-[12px] bg-gray-800 px-3 py-2 text-white text-sm font-medium hover:bg-gray-900 transition-colors shadow-sm"
+                className="w-full h-10 rounded-[12px] bg-gray-800 px-3 text-white text-xs font-medium hover:bg-gray-900 transition-colors shadow-sm flex items-center justify-center"
                 onClick={downloadJson}
               >
                 📥 Baixar JSON
               </button>
               <button
-                className="w-full rounded-[12px] bg-green-700 px-3 py-2 text-white text-sm font-medium hover:bg-green-800 transition-colors shadow-sm"
+                className="w-full h-10 rounded-[12px] bg-green-700 px-3 text-white text-xs font-medium hover:bg-green-800 transition-colors shadow-sm flex items-center justify-center"
                 onClick={() => setIsLoadModalOpen(true)}
               >
                 📂 Carregar da API
               </button>
               <button
-                className="w-full rounded-[12px] bg-gray-600 px-3 py-2 text-white text-sm font-medium hover:bg-gray-700 transition-colors shadow-sm"
+                className="w-full h-10 rounded-[12px] bg-gray-600 px-3 text-white text-xs font-medium hover:bg-gray-700 transition-colors shadow-sm flex items-center justify-center"
                 onClick={() => {
                   const jsonData = prompt('Cole o JSON para carregar:')
                   if (jsonData) {
@@ -810,7 +810,7 @@ export function Canvas() {
             </div>
           </div>
         </div>
-        <div className="relative grow rounded-lg border bg-white min-h-0">
+        <div className="relative grow rounded-lg border-[#daeef6] border-solid-1 bg-white min-h-0">
           {/* canvas area with absolutely positioned rows and loose trackers */}
           <div className="relative h-full min-h-[560px] overflow-hidden p-3" ref={canvasRef}>
             <div 
@@ -928,19 +928,19 @@ export function Canvas() {
             <div className="space-y-2">
               <div className="flex gap-1.5">
                 <button 
-                  className="flex-1 rounded-[12px] bg-gray-600 px-3 py-1.5 text-white text-xs font-medium hover:bg-gray-700 transition-colors" 
+                  className="flex-1 h-10 rounded-[12px] bg-gray-600 px-3 text-white text-xs font-medium hover:bg-gray-700 transition-colors flex items-center justify-center" 
                   onClick={() => setZoom(Math.max(0.1, zoom - 0.1))}
                 >
                   −
                 </button>
                 <button 
-                  className="flex-1 rounded-[12px] bg-gray-600 px-3 py-1.5 text-white text-xs font-medium hover:bg-gray-700 transition-colors" 
+                  className="flex-1 h-10 rounded-[12px] bg-gray-600 px-3 text-white text-xs font-medium hover:bg-gray-700 transition-colors flex items-center justify-center" 
                   onClick={() => setZoom(Math.min(3, zoom + 0.1))}
                 >
                   +
                 </button>
                 <button 
-                  className="flex-1 rounded-[12px] bg-gray-500 px-3 py-1.5 text-white text-xs font-medium hover:bg-gray-600 transition-colors" 
+                  className="flex-1 h-10 rounded-[12px] bg-gray-500 px-3 text-white text-xs font-medium hover:bg-gray-600 transition-colors flex items-center justify-center" 
                   onClick={resetZoom}
                 >
                   Reset

@@ -9,7 +9,7 @@ function Header() {
   const isViewMode = location.pathname === '/view'
 
   return (
-    <header className="border-b bg-white pt-3 pr-3 pb-3">
+    <header className="border-b border-[#daeef6] border-solid-1 bg-white pt-3 pr-3 pb-3">
       <div className="flex items-center justify-between">
         <div className="flex flex-col gap-1">
           <h1 className="flex items-center gap-2">
@@ -24,7 +24,7 @@ function Header() {
           {!isViewMode ? (
             <Link
               to="/view"
-                className="flex items-center gap-2 rounded-[12px] bg-[#1d5cc6] px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 transition-colors shadow-sm"
+                className="flex items-center gap-2 h-10 rounded-[12px] bg-[#1d5cc6] px-4 text-xs font-medium text-white hover:bg-blue-700 transition-colors shadow-sm"
             >
               <Eye size={16} />
               Visualizar Mapa
@@ -32,7 +32,7 @@ function Header() {
           ) : (
             <Link
               to="/"
-              className="flex items-center gap-2 rounded-[12px] bg-gray-600 px-4 py-2 text-sm font-medium text-white hover:bg-gray-700 transition-colors shadow-sm"
+              className="flex items-center gap-2 h-10 rounded-[12px] bg-gray-600 px-4 text-xs font-medium text-white hover:bg-gray-700 transition-colors shadow-sm"
             >
               Voltar para Edição
             </Link>

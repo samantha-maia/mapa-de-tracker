@@ -97,14 +97,14 @@ export function LoadMapModal({ isOpen, onClose, onLoad, isLoading = false }: Pro
                 <button
                   type="button"
                   onClick={onClose}
-                  className="flex-1 px-4 py-2 bg-gray-300 text-gray-700 rounded-[12px] hover:bg-gray-400 transition-colors font-medium"
+                  className="flex-1 h-10 px-4 bg-gray-300 text-gray-700 rounded-[12px] hover:bg-gray-400 transition-colors text-xs font-medium flex items-center justify-center"
                   disabled={isLoading}
                 >
                   Cancelar
                 </button>
                 <button
                   type="submit"
-                  className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-[12px] hover:bg-blue-700 transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="flex-1 h-10 px-4 bg-blue-600 text-white rounded-[12px] hover:bg-blue-700 transition-colors text-xs font-medium disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
                   disabled={isLoading}
                 >
                   Carregar
