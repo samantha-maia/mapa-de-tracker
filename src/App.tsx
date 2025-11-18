@@ -11,8 +11,32 @@ function Header() {
   const appParams = useAppParams()
   
   // Determina se é criação ou edição baseado no fieldId
-  const fieldIdNum = appParams.fieldId ? parseInt(appParams.fieldId, 10) : null
-  const isEditMode = fieldIdNum !== null && fieldIdNum !== 0
+  // Prioriza o contexto (que persiste) sobre a URL (que pode ser limpa)
+  const urlParams = new URLSearchParams(location.search)
+  const urlFieldId = urlParams.get('fieldId')
+  
+  // Usa o contexto primeiro, depois a URL como fallback
+  const fieldIdToUse = appParams.fieldId || urlFieldId
+  const fieldIdNum = fieldIdToUse ? parseInt(fieldIdToUse, 10) : null
+  
+  const isEditMode = fieldIdNum !== null && !isNaN(fieldIdNum) && fieldIdNum !== 0
+  const isCreateMode = fieldIdNum === 0
+
+  // Título baseado no modo
+  const getTitle = () => {
+    if (isViewMode) return 'Visualizar Mapa de Tracker'
+    if (isEditMode) return 'Editar Mapa de Tracker'
+    if (isCreateMode) return 'Criar Mapa de Tracker'
+    return 'Criar Mapa de Tracker' // Default
+  }
+
+  // Descrição baseada no modo
+  const getDescription = () => {
+    if (isViewMode) return 'Visualize o mapa de trackers do projeto. Modo somente leitura.'
+    if (isEditMode) return 'Edite e administre os lotes que fazem parte do seu projeto. Cada lote abarca trackers e módulos.'
+    if (isCreateMode) return 'Crie e administre os lotes que fazem parte do seu projeto. Cada lote abarca trackers e módulos.'
+    return 'Crie e administre os lotes que fazem parte do seu projeto. Cada lote abarca trackers e módulos.' // Default
+  }
 
   return (
     <header className="border-b border-[#daeef6] border-solid-1 bg-white pt-3 pr-3 pb-3">
@@ -20,20 +44,10 @@ function Header() {
         <div className="flex flex-col gap-1">
           <h1 className="flex items-center gap-2">
             <MdSolarPower className="text-[#1d5cc6]" size={24} />
-            {isViewMode 
-              ? 'Visualizar Mapa de Tracker'
-              : isEditMode 
-                ? 'Editar Mapa de Tracker'
-                : 'Criar Mapa de Tracker'
-            }
+            {getTitle()}
           </h1>
           <p className="text-[12px] font-medium" style={{ color: '#76787d' }}>
-            {isViewMode
-              ? 'Visualize o mapa de trackers do projeto. Modo somente leitura.'
-              : isEditMode
-                ? 'Edite e administre os lotes que fazem parte do seu projeto. Cada lote abarca trackers e módulos.'
-                : 'Crie e administre os lotes que fazem parte do seu projeto. Cada lote abarca trackers e módulos.'
-            }
+            {getDescription()}
           </p>
         </div>
         <div className="flex items-center gap-3">
@@ -61,8 +75,8 @@ function Header() {
 
 export default function App() {
   return (
-    <AppParamsProvider>
-      <BrowserRouter>
+    <BrowserRouter>
+      <AppParamsProvider>
         <div className="flex h-screen flex-col">
           <Header />
           <div className="min-h-0 flex-1">
@@ -73,7 +87,7 @@ export default function App() {
             </Routes>
           </div>
         </div>
-      </BrowserRouter>
-    </AppParamsProvider>
+      </AppParamsProvider>
+    </BrowserRouter>
   )
 }

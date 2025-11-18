@@ -123,26 +123,32 @@ export function Canvas() {
 
   // Load trackers from API when component mounts
   useEffect(() => {
-    useTrackersStore.getState().fetchTrackers()
-  }, [])
+    useTrackersStore.getState().fetchTrackers(appParams.authToken)
+  }, [appParams.authToken])
 
   // Auto-load map from API when URL parameters are present
   // Se fieldId != 0 → modo edição (carrega dados)
   // Se fieldId == 0 → modo criação (tela vazia)
-  const hasAutoLoadedRef = useRef(false)
+  const lastLoadedParamsRef = useRef<string>('')
   useEffect(() => {
-    if (appParams.projectId && appParams.fieldId && !hasAutoLoadedRef.current) {
+    if (appParams.projectId && appParams.fieldId) {
       const projectIdNum = parseInt(appParams.projectId, 10)
       const fieldIdNum = parseInt(appParams.fieldId, 10)
       
-      // Só carrega se fieldId != 0 (modo edição)
-      if (!isNaN(projectIdNum) && !isNaN(fieldIdNum) && fieldIdNum !== 0) {
-        hasAutoLoadedRef.current = true
+      // Cria uma chave única para os parâmetros atuais
+      const paramsKey = `${projectIdNum}-${fieldIdNum}`
+      
+      // Só carrega se fieldId != 0 (modo edição) e se ainda não carregou esses parâmetros
+      if (!isNaN(projectIdNum) && !isNaN(fieldIdNum) && fieldIdNum !== 0 && lastLoadedParamsRef.current !== paramsKey) {
+        lastLoadedParamsRef.current = paramsKey
+        console.log('Carregando mapa automaticamente...', { projectId: projectIdNum, fieldId: fieldIdNum })
         setIsLoading(true)
         loadFromApi(projectIdNum, fieldIdNum, appParams.authToken)
           .then((result) => {
             setIsLoading(false)
-            if (!result.success) {
+            if (result.success) {
+              console.log('Mapa carregado com sucesso!')
+            } else {
               console.warn('Erro ao carregar mapa automaticamente:', result.error)
             }
           })
@@ -152,6 +158,11 @@ export function Canvas() {
           })
       }
       // Se fieldId == 0, não carrega nada (modo criação - tela vazia)
+      else if (fieldIdNum === 0) {
+        // Reset do ref quando mudar para modo criação
+        lastLoadedParamsRef.current = ''
+        console.log('Modo criação - tela vazia')
+      }
     }
   }, [appParams.projectId, appParams.fieldId, appParams.authToken, loadFromApi])
 
@@ -844,6 +855,15 @@ export function Canvas() {
           </div>
         </div>
         <div className="relative grow rounded-lg border-[#daeef6] border-solid-1 bg-white min-h-0">
+          {/* Loading overlay */}
+          {isLoading && (
+            <div className="absolute inset-0 z-50 flex items-center justify-center bg-white bg-opacity-80 rounded-lg">
+              <div className="flex flex-col items-center gap-3">
+                <div className="w-12 h-12 border-4 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
+                <p className="text-sm font-medium text-gray-700">Carregando mapa...</p>
+              </div>
+            </div>
+          )}
           {/* canvas area with absolutely positioned rows and loose trackers */}
           <div className="relative h-full min-h-[560px] overflow-hidden p-3" ref={canvasRef}>
             <div 

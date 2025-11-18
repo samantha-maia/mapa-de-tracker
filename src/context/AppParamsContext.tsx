@@ -1,4 +1,5 @@
 import { createContext, useContext, useEffect, useState, ReactNode } from 'react'
+import { useLocation } from 'react-router-dom'
 
 interface AppParams {
   projectId: string | null
@@ -13,6 +14,7 @@ const AppParamsContext = createContext<AppParams>({
 })
 
 export function AppParamsProvider({ children }: { children: ReactNode }) {
+  const location = useLocation()
   const [params, setParams] = useState<AppParams>({
     projectId: null,
     fieldId: null,
@@ -20,14 +22,23 @@ export function AppParamsProvider({ children }: { children: ReactNode }) {
   })
 
   useEffect(() => {
-    // Captura os parâmetros da URL quando o componente monta
-    const urlParams = new URLSearchParams(window.location.search)
-    setParams({
+    // Captura os parâmetros da URL sempre que a location mudar
+    const urlParams = new URLSearchParams(location.search)
+    const newParams = {
       projectId: urlParams.get('projectId'),
       fieldId: urlParams.get('fieldId'),
       authToken: urlParams.get('authToken'),
-    })
-  }, [])
+    }
+    
+    // Só atualiza se houver novos parâmetros na URL
+    // Isso preserva os valores anteriores se a URL for limpa
+    if (newParams.projectId || newParams.fieldId || newParams.authToken) {
+      setParams(newParams)
+      console.log('Parâmetros da URL capturados:', newParams)
+    }
+    // Se a URL não tem parâmetros mas já temos valores, mantém os valores anteriores
+    // Isso evita perder os parâmetros se a URL for limpa acidentalmente
+  }, [location.search])
 
   return (
     <AppParamsContext.Provider value={params}>

@@ -8,7 +8,7 @@ interface TrackersStore {
   trackers: ExternalTracker[]
   loading: boolean
   error: string | null
-  fetchTrackers: () => Promise<void>
+  fetchTrackers: (authToken?: string | null) => Promise<void>
   getTrackerById: (id: number) => ExternalTracker | undefined
 }
 
@@ -17,11 +17,19 @@ export const useTrackersStore = create<TrackersStore>((set, get) => ({
   loading: false,
   error: null,
   
-  fetchTrackers: async () => {
+  fetchTrackers: async (authToken?: string | null) => {
     set({ loading: true, error: null })
     
     try {
-      const response = await fetch(API_URL)
+      const headers: HeadersInit = {
+        'Content-Type': 'application/json',
+      }
+      
+      if (authToken) {
+        headers['Authorization'] = `Bearer ${authToken}`
+      }
+      
+      const response = await fetch(API_URL, { headers })
       
       if (!response.ok) {
         throw new Error(`Erro ao buscar trackers: ${response.statusText}`)
