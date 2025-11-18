@@ -135,19 +135,19 @@ export function ViewCanvas() {
         <div className="space-y-2">
           <div className="flex gap-1.5">
             <button 
-              className="flex-1 rounded-md bg-gray-600 px-2 py-1.5 text-white text-xs font-medium hover:bg-gray-700 transition-colors" 
+              className="flex-1 rounded-[12px] bg-gray-600 px-2 py-1.5 text-white text-xs font-medium hover:bg-gray-700 transition-colors" 
               onClick={() => setZoom(Math.max(0.1, zoom - 0.1))}
             >
               −
             </button>
             <button 
-              className="flex-1 rounded-md bg-gray-600 px-2 py-1.5 text-white text-xs font-medium hover:bg-gray-700 transition-colors" 
+              className="flex-1 rounded-[12px] bg-gray-600 px-2 py-1.5 text-white text-xs font-medium hover:bg-gray-700 transition-colors" 
               onClick={() => setZoom(Math.min(3, zoom + 0.1))}
             >
               +
             </button>
             <button 
-              className="flex-1 rounded-md bg-gray-500 px-2 py-1.5 text-white text-xs font-medium hover:bg-gray-600 transition-colors" 
+              className="flex-1 rounded-[12px] bg-gray-500 px-2 py-1.5 text-white text-xs font-medium hover:bg-gray-600 transition-colors" 
               onClick={resetZoom}
             >
               Reset

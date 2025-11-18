@@ -560,13 +560,13 @@ export function Canvas() {
               <h4 className="text-xs font-semibold text-gray-700 mb-2 uppercase tracking-wide">Fileiras</h4>
               <div className="space-y-2">
                 <button 
-                  className="w-full rounded-md bg-blue-600 px-3 py-2 text-white text-sm font-medium hover:bg-blue-700 transition-colors shadow-sm" 
+                  className="w-full rounded-[12px] bg-blue-600 px-3 py-2 text-white text-sm font-medium hover:bg-blue-700 transition-colors shadow-sm" 
                   onClick={() => addEmptyRow()}
                 >
                   + Criar Row
                 </button>
                 <button 
-                  className="w-full rounded-md bg-emerald-600 px-3 py-2 text-white text-sm font-medium hover:bg-emerald-700 transition-colors shadow-sm disabled:opacity-50 disabled:cursor-not-allowed" 
+                  className="w-full rounded-[12px] bg-emerald-600 px-3 py-2 text-white text-sm font-medium hover:bg-emerald-700 transition-colors shadow-sm disabled:opacity-50 disabled:cursor-not-allowed" 
                   onClick={() => {
                     const result = groupSelectedIntoRow()
                     if (!result) {
@@ -590,13 +590,13 @@ export function Canvas() {
               <h4 className="text-xs font-semibold text-gray-700 mb-2 uppercase tracking-wide">Grupos</h4>
               <div className="space-y-2">
                 <button 
-                  className="w-full rounded-md bg-purple-600 px-3 py-2 text-white text-sm font-medium hover:bg-purple-700 transition-colors shadow-sm" 
+                  className="w-full rounded-[12px] bg-purple-600 px-3 py-2 text-white text-sm font-medium hover:bg-purple-700 transition-colors shadow-sm" 
                   onClick={() => addEmptyRowGroup()}
                 >
                   + Criar Grupo
                 </button>
                 <button 
-                  className="w-full rounded-md bg-indigo-600 px-3 py-2 text-white text-sm font-medium hover:bg-indigo-700 transition-colors shadow-sm" 
+                  className="w-full rounded-[12px] bg-indigo-600 px-3 py-2 text-white text-sm font-medium hover:bg-indigo-700 transition-colors shadow-sm" 
                   onClick={() => groupSelectedRowsIntoGroup()}
                 >
                   Agrupar Fileiras
@@ -609,7 +609,7 @@ export function Canvas() {
               <h4 className="text-xs font-semibold text-gray-700 mb-2 uppercase tracking-wide">Texto</h4>
               <div className="space-y-2">
                 <button 
-                  className="w-full rounded-md bg-teal-600 px-3 py-2 text-white text-sm font-medium hover:bg-teal-700 transition-colors shadow-sm" 
+                  className="w-full rounded-[12px] bg-teal-600 px-3 py-2 text-white text-sm font-medium hover:bg-teal-700 transition-colors shadow-sm" 
                   onClick={() => {
                     const rect = canvasRef.current?.getBoundingClientRect()
                     if (rect) {
@@ -638,7 +638,7 @@ export function Canvas() {
                 </h4>
                 <div className="space-y-2">
                   <button 
-                    className="w-full rounded-md bg-orange-600 px-3 py-2 text-white text-sm font-medium hover:bg-orange-700 transition-colors shadow-sm" 
+                    className="w-full rounded-[12px] bg-orange-600 px-3 py-2 text-white text-sm font-medium hover:bg-orange-700 transition-colors shadow-sm" 
                     onClick={() => duplicateSelected()}
                     title="Ctrl+V para duplicar"
                   >
@@ -654,42 +654,42 @@ export function Canvas() {
                 <h4 className="text-xs font-semibold text-gray-700 mb-3 uppercase tracking-wide">Alinhamento</h4>
                 <div className="grid grid-cols-3 gap-1.5">
                   <button 
-                    className="rounded-md bg-gray-600 px-2 py-1.5 text-white text-xs flex items-center justify-center hover:bg-gray-700 transition-colors" 
+                    className="rounded-[12px] bg-gray-600 px-2 py-1.5 text-white text-xs flex items-center justify-center hover:bg-gray-700 transition-colors" 
                     onClick={() => alignSelected('left')}
                     title="Alinhar à esquerda"
                   >
                     <AlignLeft size={14} />
                   </button>
                   <button 
-                    className="rounded-md bg-gray-600 px-2 py-1.5 text-white text-xs flex items-center justify-center hover:bg-gray-700 transition-colors" 
+                    className="rounded-[12px] bg-gray-600 px-2 py-1.5 text-white text-xs flex items-center justify-center hover:bg-gray-700 transition-colors" 
                     onClick={() => alignSelected('center')}
                     title="Centralizar horizontalmente"
                   >
                     <AlignCenter size={14} />
                   </button>
                   <button 
-                    className="rounded-md bg-gray-600 px-2 py-1.5 text-white text-xs flex items-center justify-center hover:bg-gray-700 transition-colors" 
+                    className="rounded-[12px] bg-gray-600 px-2 py-1.5 text-white text-xs flex items-center justify-center hover:bg-gray-700 transition-colors" 
                     onClick={() => alignSelected('right')}
                     title="Alinhar à direita"
                   >
                     <AlignRight size={14} />
                   </button>
                   <button 
-                    className="rounded-md bg-gray-600 px-2 py-1.5 text-white text-xs flex items-center justify-center hover:bg-gray-700 transition-colors" 
+                    className="rounded-[12px] bg-gray-600 px-2 py-1.5 text-white text-xs flex items-center justify-center hover:bg-gray-700 transition-colors" 
                     onClick={() => alignSelected('top')}
                     title="Alinhar ao topo"
                   >
                     <AlignStartVertical size={14} />
                   </button>
                   <button 
-                    className="rounded-md bg-gray-600 px-2 py-1.5 text-white text-xs flex items-center justify-center hover:bg-gray-700 transition-colors" 
+                    className="rounded-[12px] bg-gray-600 px-2 py-1.5 text-white text-xs flex items-center justify-center hover:bg-gray-700 transition-colors" 
                     onClick={() => alignSelected('middle')}
                     title="Centralizar verticalmente"
                   >
                     <AlignCenterVertical size={14} />
                   </button>
                   <button 
-                    className="rounded-md bg-gray-600 px-2 py-1.5 text-white text-xs flex items-center justify-center hover:bg-gray-700 transition-colors" 
+                    className="rounded-[12px] bg-gray-600 px-2 py-1.5 text-white text-xs flex items-center justify-center hover:bg-gray-700 transition-colors" 
                     onClick={() => alignSelected('bottom')}
                     title="Alinhar à base"
                   >
@@ -705,7 +705,7 @@ export function Canvas() {
                 <h4 className="text-xs font-semibold text-gray-700 mb-3 uppercase tracking-wide">Distribuir</h4>
                 <div className="flex gap-2">
                   <button 
-                    className="flex-1 rounded-md bg-purple-600 px-3 py-2 text-white text-xs font-medium flex items-center justify-center gap-1.5 hover:bg-purple-700 transition-colors shadow-sm" 
+                    className="flex-1 rounded-[12px] bg-purple-600 px-3 py-2 text-white text-xs font-medium flex items-center justify-center gap-1.5 hover:bg-purple-700 transition-colors shadow-sm" 
                     onClick={() => distributeSelected('horizontal')}
                     title="Distribuir horizontalmente"
                   >
@@ -713,7 +713,7 @@ export function Canvas() {
                     <span>Horizontal</span>
                   </button>
                   <button 
-                    className="flex-1 rounded-md bg-purple-600 px-3 py-2 text-white text-xs font-medium flex items-center justify-center gap-1.5 hover:bg-purple-700 transition-colors shadow-sm" 
+                    className="flex-1 rounded-[12px] bg-purple-600 px-3 py-2 text-white text-xs font-medium flex items-center justify-center gap-1.5 hover:bg-purple-700 transition-colors shadow-sm" 
                     onClick={() => distributeSelected('vertical')}
                     title="Distribuir verticalmente"
                   >
@@ -730,19 +730,19 @@ export function Canvas() {
               <div className="space-y-2">
                 <div className="flex gap-1.5">
                   <button 
-                    className="flex-1 rounded-md bg-gray-600 px-2 py-1.5 text-white text-xs font-medium hover:bg-gray-700 transition-colors" 
+                    className="flex-1 rounded-[12px] bg-gray-600 px-2 py-1.5 text-white text-xs font-medium hover:bg-gray-700 transition-colors" 
                     onClick={zoomOut}
                   >
                     −
                   </button>
                   <button 
-                    className="flex-1 rounded-md bg-gray-600 px-2 py-1.5 text-white text-xs font-medium hover:bg-gray-700 transition-colors" 
+                    className="flex-1 rounded-[12px] bg-gray-600 px-2 py-1.5 text-white text-xs font-medium hover:bg-gray-700 transition-colors" 
                     onClick={zoomIn}
                   >
                     +
                   </button>
                   <button 
-                    className="flex-1 rounded-md bg-gray-500 px-2 py-1.5 text-white text-xs font-medium hover:bg-gray-600 transition-colors" 
+                    className="flex-1 rounded-[12px] bg-gray-500 px-2 py-1.5 text-white text-xs font-medium hover:bg-gray-600 transition-colors" 
                     onClick={resetZoom}
                   >
                     Reset
@@ -801,7 +801,7 @@ export function Canvas() {
             <div className="rounded-lg border border-gray-200 bg-gray-50 p-3 space-y-2">
               <h4 className="text-xs font-semibold text-gray-700 mb-2 uppercase tracking-wide">Arquivo</h4>
               <button
-                className="w-full rounded-md bg-blue-600 px-3 py-2 text-white text-sm font-medium hover:bg-blue-700 transition-colors shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
+                className="w-full rounded-[12px] bg-blue-600 px-3 py-2 text-white text-sm font-medium hover:bg-blue-700 transition-colors shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
                 onClick={async () => {
                   setIsSaving(true)
                   const result = await saveToApi()
@@ -817,19 +817,19 @@ export function Canvas() {
                 {isSaving ? '⏳ Salvando...' : '💾 Salvar na API'}
               </button>
               <button
-                className="w-full rounded-md bg-gray-800 px-3 py-2 text-white text-sm font-medium hover:bg-gray-900 transition-colors shadow-sm"
+                className="w-full rounded-[12px] bg-gray-800 px-3 py-2 text-white text-sm font-medium hover:bg-gray-900 transition-colors shadow-sm"
                 onClick={downloadJson}
               >
                 📥 Baixar JSON
               </button>
               <button
-                className="w-full rounded-md bg-green-700 px-3 py-2 text-white text-sm font-medium hover:bg-green-800 transition-colors shadow-sm"
+                className="w-full rounded-[12px] bg-green-700 px-3 py-2 text-white text-sm font-medium hover:bg-green-800 transition-colors shadow-sm"
                 onClick={() => setIsLoadModalOpen(true)}
               >
                 📂 Carregar da API
               </button>
               <button
-                className="w-full rounded-md bg-gray-600 px-3 py-2 text-white text-sm font-medium hover:bg-gray-700 transition-colors shadow-sm"
+                className="w-full rounded-[12px] bg-gray-600 px-3 py-2 text-white text-sm font-medium hover:bg-gray-700 transition-colors shadow-sm"
                 onClick={() => {
                   const jsonData = prompt('Cole o JSON para carregar:')
                   if (jsonData) {
@@ -872,7 +872,7 @@ export function Canvas() {
               {/* Visual feedback when Space is pressed */}
               {isSpacePressed && !isPanning && (
                 <div className="absolute top-4 left-1/2 -translate-x-1/2 z-50 pointer-events-none">
-                  <div className="bg-blue-600 text-white px-3 py-1.5 rounded-md text-xs font-medium shadow-lg flex items-center gap-2">
+                  <div className="bg-blue-600 text-white px-3 py-1.5 rounded-[12px] text-xs font-medium shadow-lg flex items-center gap-2">
                     <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16l-4-4m0 0l4-4m-4 4h18" />
                     </svg>

@@ -2,6 +2,7 @@ import { BrowserRouter, Routes, Route, Link, useLocation } from 'react-router-do
 import { Canvas } from './components/Canvas'
 import { ViewCanvas } from './components/ViewCanvas'
 import { Eye } from 'lucide-react'
+import { MdSolarPower } from 'react-icons/md'
 
 function Header() {
   const location = useLocation()
@@ -10,12 +11,15 @@ function Header() {
   return (
     <header className="border-b bg-white p-3">
       <div className="flex items-center justify-between">
-        <h1 className="text-lg font-semibold">Criar Mapa de Tracker</h1>
+        <h1 className="text-lg font-semibold flex items-center gap-2">
+          <MdSolarPower className="text-[#1d5cc6]" size={24} />
+          Criar Mapa de Tracker
+        </h1>
         <div className="flex items-center gap-3">
           {!isViewMode ? (
             <Link
               to="/view"
-              className="flex items-center gap-2 rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 transition-colors shadow-sm"
+                className="flex items-center gap-2 rounded-[12px] bg-[#1d5cc6] px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 transition-colors shadow-sm"
             >
               <Eye size={16} />
               Visualizar Mapa
@@ -23,7 +27,7 @@ function Header() {
           ) : (
             <Link
               to="/"
-              className="flex items-center gap-2 rounded-md bg-gray-600 px-4 py-2 text-sm font-medium text-white hover:bg-gray-700 transition-colors shadow-sm"
+              className="flex items-center gap-2 rounded-[12px] bg-gray-600 px-4 py-2 text-sm font-medium text-white hover:bg-gray-700 transition-colors shadow-sm"
             >
               Voltar para Edição
             </Link>

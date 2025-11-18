@@ -178,7 +178,7 @@ export function RowGroup({ groupId, viewMode = false }: Props) {
             {group.name || `Grupo ${groupId}`}
           </div> */}
           <button 
-            className={`rounded px-2 py-1 text-xs text-white ${isDragMode ? 'bg-green-600 hover:bg-green-700' : 'bg-gray-600 hover:bg-gray-700'}`}
+            className={`rounded-[12px] px-2 py-1 text-xs text-white ${isDragMode ? 'bg-green-600 hover:bg-green-700' : 'bg-gray-600 hover:bg-gray-700'}`}
             onClick={(e)=>{ 
               e.preventDefault(); 
               e.stopPropagation(); 
@@ -199,7 +199,7 @@ export function RowGroup({ groupId, viewMode = false }: Props) {
             </svg>
           </button>
           <button 
-            className="rounded bg-yellow-600 px-1.5 py-0.5 text-xs text-white hover:bg-yellow-700" 
+            className="rounded-[12px] bg-yellow-600 px-1.5 py-0.5 text-xs text-white hover:bg-yellow-700" 
             onClick={(e)=>{ 
               e.preventDefault(); 
               e.stopPropagation(); 
@@ -209,7 +209,7 @@ export function RowGroup({ groupId, viewMode = false }: Props) {
           >
             ↺
           </button>
-          <button className="rounded bg-red-600 px-1.5 py-0.5 text-xs text-white" onClick={(e)=>{ e.preventDefault(); e.stopPropagation(); removeGroup(groupId) }}>x</button>
+          <button className="rounded-[12px] bg-red-600 px-1.5 py-0.5 text-xs text-white" onClick={(e)=>{ e.preventDefault(); e.stopPropagation(); removeGroup(groupId) }}>x</button>
         </div>
       )}
 

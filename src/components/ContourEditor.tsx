@@ -160,13 +160,13 @@ export function ContourEditor({ initialRect, onRectChange, onSave, onCancel, con
             <div className="flex gap-2">
               <button
                 onClick={onSave}
-                className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+                className="px-4 py-2 bg-blue-600 text-white rounded-[12px] hover:bg-blue-700"
               >
                 Salvar
               </button>
               <button
                 onClick={onCancel}
-                className="px-4 py-2 bg-gray-300 text-gray-700 rounded hover:bg-gray-400"
+                className="px-4 py-2 bg-gray-300 text-gray-700 rounded-[12px] hover:bg-gray-400"
               >
                 Cancelar
               </button>
