@@ -71,8 +71,6 @@ export function Canvas() {
   const removeRowGroup = useLayoutStore((s) => s.removeRowGroup)
   const zoom = useLayoutStore((s) => s.zoom)
   const setZoom = useLayoutStore((s) => s.setZoom)
-  const zoomIn = useLayoutStore((s) => s.zoomIn)
-  const zoomOut = useLayoutStore((s) => s.zoomOut)
   const resetZoom = useLayoutStore((s) => s.resetZoom)
   const panX = useLayoutStore((s) => s.panX)
   const panY = useLayoutStore((s) => s.panY)
@@ -724,36 +722,6 @@ export function Canvas() {
               </div>
             )}
             
-            {/* Zoom Controls */}
-            <div className="rounded-lg border border-gray-200 bg-gray-50 p-3">
-              <h4 className="text-xs font-semibold text-gray-700 mb-3 uppercase tracking-wide">Zoom</h4>
-              <div className="space-y-2">
-                <div className="flex gap-1.5">
-                  <button 
-                    className="flex-1 rounded-[12px] bg-gray-600 px-2 py-1.5 text-white text-xs font-medium hover:bg-gray-700 transition-colors" 
-                    onClick={zoomOut}
-                  >
-                    −
-                  </button>
-                  <button 
-                    className="flex-1 rounded-[12px] bg-gray-600 px-2 py-1.5 text-white text-xs font-medium hover:bg-gray-700 transition-colors" 
-                    onClick={zoomIn}
-                  >
-                    +
-                  </button>
-                  <button 
-                    className="flex-1 rounded-[12px] bg-gray-500 px-2 py-1.5 text-white text-xs font-medium hover:bg-gray-600 transition-colors" 
-                    onClick={resetZoom}
-                  >
-                    Reset
-                  </button>
-                </div>
-                <div className="text-xs text-gray-600 text-center font-medium py-1">
-                  {Math.round(zoom * 100)}%
-                </div>
-              </div>
-            </div>
-
             {/* Keyboard Shortcuts */}
             <div className="rounded-lg border border-gray-200 bg-gray-50 p-3">
               <h4 className="text-xs font-semibold text-gray-700 mb-2 uppercase tracking-wide">Atalhos</h4>
@@ -953,6 +921,36 @@ export function Canvas() {
               }}
             />
           )}
+
+          {/* Zoom Controls */}
+          <div className="absolute top-4 right-4 rounded-lg border border-gray-200 bg-white p-3 shadow-lg">
+            <div className="text-xs font-semibold text-gray-700 mb-2 uppercase tracking-wide">Zoom</div>
+            <div className="space-y-2">
+              <div className="flex gap-1.5">
+                <button 
+                  className="flex-1 rounded-[12px] bg-gray-600 px-3 py-1.5 text-white text-xs font-medium hover:bg-gray-700 transition-colors" 
+                  onClick={() => setZoom(Math.max(0.1, zoom - 0.1))}
+                >
+                  −
+                </button>
+                <button 
+                  className="flex-1 rounded-[12px] bg-gray-600 px-3 py-1.5 text-white text-xs font-medium hover:bg-gray-700 transition-colors" 
+                  onClick={() => setZoom(Math.min(3, zoom + 0.1))}
+                >
+                  +
+                </button>
+                <button 
+                  className="flex-1 rounded-[12px] bg-gray-500 px-3 py-1.5 text-white text-xs font-medium hover:bg-gray-600 transition-colors" 
+                  onClick={resetZoom}
+                >
+                  Reset
+                </button>
+              </div>
+              <div className="text-xs text-gray-600 text-center font-medium py-1">
+                {Math.round(zoom * 100)}%
+              </div>
+            </div>
+          </div>
         </div>
       </div>
 

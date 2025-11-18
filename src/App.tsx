@@ -9,7 +9,7 @@ function Header() {
   const isViewMode = location.pathname === '/view'
 
   return (
-    <header className="border-b bg-white p-3">
+    <header className="border-b bg-white pt-3 pr-3 pb-3">
       <div className="flex items-center justify-between">
         <div className="flex flex-col gap-1">
           <h1 className="flex items-center gap-2">
