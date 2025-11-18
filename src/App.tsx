@@ -11,10 +11,15 @@ function Header() {
   return (
     <header className="border-b bg-white p-3">
       <div className="flex items-center justify-between">
-        <h1 className="text-lg font-semibold flex items-center gap-2">
-          <MdSolarPower className="text-[#1d5cc6]" size={24} />
-          Criar Mapa de Tracker
-        </h1>
+        <div className="flex flex-col gap-1">
+          <h1 className="flex items-center gap-2">
+            <MdSolarPower className="text-[#1d5cc6]" size={24} />
+            Criar Mapa de Tracker
+          </h1>
+          <p className="text-[12px] font-medium" style={{ color: '#76787d' }}>
+            Crie e administre os lotes que fazem parte do seu projeto. Cada lote abarca trackers e módulos.
+          </p>
+        </div>
         <div className="flex items-center gap-3">
           {!isViewMode ? (
             <Link
