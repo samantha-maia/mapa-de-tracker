@@ -1,4 +1,4 @@
-import { BrowserRouter, Routes, Route, Link, useLocation } from 'react-router-dom'
+import { BrowserRouter, Routes, Route, Link, useLocation, Navigate } from 'react-router-dom'
 import { Canvas } from './components/Canvas'
 import { ViewCanvas } from './components/ViewCanvas'
 import { Eye } from 'lucide-react'
@@ -52,6 +52,7 @@ export default function App() {
           <Routes>
             <Route path="/" element={<Canvas />} />
             <Route path="/view" element={<ViewCanvas />} />
+            <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
         </div>
       </div>
