@@ -1,9 +1,10 @@
-import { BrowserRouter, Routes, Route, Link, useLocation, Navigate } from 'react-router-dom'
+import { BrowserRouter, Routes, Route, Link, useLocation, Navigate, useNavigate } from 'react-router-dom'
 import { Canvas } from './components/Canvas'
 import { ViewCanvas } from './components/ViewCanvas'
 import { Eye } from 'lucide-react'
 import { MdSolarPower } from 'react-icons/md'
 import { AppParamsProvider, useAppParams } from './context/AppParamsContext'
+import { useEffect } from 'react'
 
 function Header() {
   const location = useLocation()
@@ -21,6 +22,16 @@ function Header() {
   
   const isEditMode = fieldIdNum !== null && !isNaN(fieldIdNum) && fieldIdNum !== 0
   const isCreateMode = fieldIdNum === 0
+
+  // Constrói a URL com os parâmetros preservados
+  const buildUrlWithParams = (path: string) => {
+    const params = new URLSearchParams()
+    if (appParams.projectId) params.set('projectId', appParams.projectId)
+    if (appParams.fieldId) params.set('fieldId', appParams.fieldId)
+    if (appParams.authToken) params.set('authToken', appParams.authToken)
+    const queryString = params.toString()
+    return queryString ? `${path}?${queryString}` : path
+  }
 
   // Título baseado no modo
   const getTitle = () => {
@@ -61,10 +72,10 @@ function Header() {
             </Link>
           ) : (
             <Link
-              to="/"
+              to={buildUrlWithParams('/')}
               className="flex items-center gap-2 h-10 rounded-[12px] bg-gray-600 px-4 text-xs font-medium text-white hover:bg-gray-700 transition-colors shadow-sm"
             >
-              {isEditMode ? 'Voltar para Edição' : 'Voltar para Criação'}
+              Editar
             </Link>
           )}
         </div>
@@ -73,10 +84,43 @@ function Header() {
   )
 }
 
+// Componente para redirecionar automaticamente para /view quando URL tiver todos os parâmetros
+function AutoRedirectToView() {
+  const location = useLocation()
+  const navigate = useNavigate()
+  const appParams = useAppParams()
+
+  useEffect(() => {
+    // Só redireciona se estiver na rota raiz (/)
+    if (location.pathname === '/') {
+      const urlParams = new URLSearchParams(location.search)
+      const projectId = urlParams.get('projectId') || appParams.projectId
+      const fieldId = urlParams.get('fieldId') || appParams.fieldId
+      const authToken = urlParams.get('authToken') || appParams.authToken
+
+      // Se tiver todos os parâmetros e fieldId válido (≠ 0), redireciona para /view
+      if (projectId && fieldId && authToken) {
+        const fieldIdNum = parseInt(fieldId, 10)
+        if (!isNaN(fieldIdNum) && fieldIdNum !== 0) {
+          // Preserva os parâmetros na URL ao redirecionar
+          const params = new URLSearchParams()
+          params.set('projectId', projectId)
+          params.set('fieldId', fieldId)
+          params.set('authToken', authToken)
+          navigate(`/view?${params.toString()}`, { replace: true })
+        }
+      }
+    }
+  }, [location.pathname, location.search, appParams, navigate])
+
+  return null
+}
+
 export default function App() {
   return (
     <BrowserRouter>
       <AppParamsProvider>
+        <AutoRedirectToView />
         <div className="flex h-screen flex-col">
           <Header />
           <div className="min-h-0 flex-1">
