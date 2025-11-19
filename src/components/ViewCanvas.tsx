@@ -1,4 +1,4 @@
-import { useRef, useCallback, useEffect } from 'react'
+import { useRef, useCallback, useEffect, useState } from 'react'
 import { Row } from './Row'
 import { RowGroup } from './RowGroup'
 import { Tracker } from './Tracker'
@@ -9,6 +9,7 @@ import { useAppParams } from '../context/AppParamsContext'
 
 export function ViewCanvas() {
   const canvasRef = useRef<HTMLDivElement | null>(null)
+  const [isLoading, setIsLoading] = useState(false)
   const looseIds = useLayoutStore((s) => s.looseIds)
   const rows = useLayoutStore((s) => s.rows)
   const rowGroups = useLayoutStore((s) => s.rowGroups)
@@ -36,8 +37,18 @@ export function ViewCanvas() {
       // Só carrega se fieldId != 0 (não faz sentido visualizar um mapa que não existe)
       if (!isNaN(projectIdNum) && !isNaN(fieldIdNum) && fieldIdNum !== 0) {
         hasAutoLoadedRef.current = true
+        setIsLoading(true)
         loadFromApi(projectIdNum, fieldIdNum, appParams.authToken)
+          .then((result) => {
+            setIsLoading(false)
+            if (result.success) {
+              console.log('Mapa carregado com sucesso!')
+            } else {
+              console.warn('Erro ao carregar mapa automaticamente:', result.error)
+            }
+          })
           .catch((error) => {
+            setIsLoading(false)
             console.error('Erro ao carregar mapa automaticamente:', error)
           })
       }
@@ -88,6 +99,15 @@ export function ViewCanvas() {
 
   return (
     <div className="relative h-full w-full rounded-lg border bg-white min-h-0">
+      {/* Loading overlay */}
+      {isLoading && (
+        <div className="absolute inset-0 z-50 flex items-center justify-center bg-white bg-opacity-80 rounded-lg">
+          <div className="flex flex-col items-center gap-3">
+            <div className="w-12 h-12 border-4 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
+            <p className="text-sm font-medium text-gray-700">Carregando mapa...</p>
+          </div>
+        </div>
+      )}
       <div className="relative h-full min-h-[560px] overflow-hidden p-3" ref={canvasRef}>
         <div 
           className="absolute inset-0 canvas-background" 
