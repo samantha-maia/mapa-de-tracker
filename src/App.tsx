@@ -24,11 +24,12 @@ function Header() {
   const isCreateMode = fieldIdNum === 0
 
   // Constrói a URL com os parâmetros preservados
-  const buildUrlWithParams = (path: string) => {
+  const buildUrlWithParams = (path: string, mode?: 'create' | 'edit' | 'view') => {
     const params = new URLSearchParams()
     if (appParams.projectId) params.set('projectId', appParams.projectId)
     if (appParams.fieldId) params.set('fieldId', appParams.fieldId)
     if (appParams.authToken) params.set('authToken', appParams.authToken)
+    if (mode) params.set('mode', mode)
     const queryString = params.toString()
     return queryString ? `${path}?${queryString}` : path
   }
@@ -64,15 +65,15 @@ function Header() {
         <div className="flex items-center gap-3">
           {!isViewMode ? (
             <Link
-              to="/view"
-                className="flex items-center gap-2 h-10 rounded-[12px] bg-[#1d5cc6] px-4 text-xs font-medium text-white hover:bg-blue-700 transition-colors shadow-sm"
+              to={buildUrlWithParams('/view', 'view')}
+              className="flex items-center gap-2 h-10 rounded-[12px] bg-[#1d5cc6] px-4 text-xs font-medium text-white hover:bg-blue-700 transition-colors shadow-sm"
             >
               <Eye size={16} />
               Visualizar Mapa
             </Link>
           ) : (
             <Link
-              to={buildUrlWithParams('/')}
+              to={buildUrlWithParams('/', isEditMode ? 'edit' : 'create')}
               className="flex items-center gap-2 h-10 rounded-[12px] bg-gray-600 px-4 text-xs font-medium text-white hover:bg-gray-700 transition-colors shadow-sm"
             >
               Editar
@@ -94,21 +95,31 @@ function AutoRedirectToView() {
     // Só redireciona se estiver na rota raiz (/)
     if (location.pathname === '/') {
       const urlParams = new URLSearchParams(location.search)
+      const mode = urlParams.get('mode')
       const projectId = urlParams.get('projectId') || appParams.projectId
       const fieldId = urlParams.get('fieldId') || appParams.fieldId
       const authToken = urlParams.get('authToken') || appParams.authToken
 
-      // Se tiver todos os parâmetros e fieldId válido (≠ 0), redireciona para /view
-      if (projectId && fieldId && authToken) {
+      // Se tiver todos os parâmetros e fieldId válido (≠ 0), e não tiver mode=edit ou mode=create, redireciona para /view
+      if (projectId && fieldId && authToken && mode !== 'edit' && mode !== 'create') {
         const fieldIdNum = parseInt(fieldId, 10)
         if (!isNaN(fieldIdNum) && fieldIdNum !== 0) {
-          // Preserva os parâmetros na URL ao redirecionar
+          // Preserva os parâmetros na URL ao redirecionar e adiciona mode=view
           const params = new URLSearchParams()
           params.set('projectId', projectId)
           params.set('fieldId', fieldId)
           params.set('authToken', authToken)
+          params.set('mode', 'view')
           navigate(`/view?${params.toString()}`, { replace: true })
         }
+      }
+      // Se não tiver fieldId mas tiver projectId e authToken, adiciona mode=create
+      else if (projectId && authToken && !fieldId && mode !== 'create' && mode !== 'edit') {
+        const params = new URLSearchParams()
+        params.set('projectId', projectId)
+        params.set('authToken', authToken)
+        params.set('mode', 'create')
+        navigate(`/?${params.toString()}`, { replace: true })
       }
     }
   }, [location.pathname, location.search, appParams, navigate])
