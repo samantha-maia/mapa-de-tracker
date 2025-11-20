@@ -13,7 +13,6 @@ import { RowGroup } from './RowGroup'
 import { Tracker } from './Tracker'
 import { TextElement } from './TextElement'
 import { TextEditorPanel } from './TextEditorPanel'
-import { LoadMapModal } from './LoadMapModal'
 import { useLayoutStore } from '../store/layoutStore'
 import type { TrackerType } from '../store/layoutStore'
 import type { ExternalTracker } from '../data/trackersCatalog'
@@ -80,12 +79,9 @@ export function Canvas() {
   const alignSelected = useLayoutStore((s) => s.alignSelected)
   const distributeSelected = useLayoutStore((s) => s.distributeSelected)
   const duplicateSelected = useLayoutStore((s) => s.duplicateSelected)
-  const loadFromJson = useLayoutStore((s) => s.loadFromJson)
   const loadFromApi = useLayoutStore((s) => s.loadFromApi)
-  const downloadJson = useLayoutStore((s) => s.downloadJson)
   const saveToApi = useLayoutStore((s) => s.saveToApi)
   const [isSaving, setIsSaving] = useState(false)
-  const [isLoadModalOpen, setIsLoadModalOpen] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
   const appParams = useAppParams()
 
@@ -826,30 +822,7 @@ export function Canvas() {
                 }}
                 disabled={isSaving}
               >
-                {isSaving ? '⏳ Salvando...' : '💾 Salvar na API'}
-              </button>
-              <button
-                className="w-full h-10 rounded-[12px] bg-gray-800 px-3 text-white text-xs font-medium hover:bg-gray-900 transition-colors shadow-sm flex items-center justify-center"
-                onClick={downloadJson}
-              >
-                📥 Baixar JSON
-              </button>
-              <button
-                className="w-full h-10 rounded-[12px] bg-green-700 px-3 text-white text-xs font-medium hover:bg-green-800 transition-colors shadow-sm flex items-center justify-center"
-                onClick={() => setIsLoadModalOpen(true)}
-              >
-                📂 Carregar da API
-              </button>
-              <button
-                className="w-full h-10 rounded-[12px] bg-gray-600 px-3 text-white text-xs font-medium hover:bg-gray-700 transition-colors shadow-sm flex items-center justify-center"
-                onClick={() => {
-                  const jsonData = prompt('Cole o JSON para carregar:')
-                  if (jsonData) {
-                    loadFromJson(jsonData)
-                  }
-                }}
-              >
-                📄 Carregar JSON Local
+                {isSaving ? '⏳ Salvando...' : '💾 Salvar Mapa'}
               </button>
             </div>
           </div>
@@ -1084,23 +1057,6 @@ export function Canvas() {
         ) : null}
       </DragOverlay>
       
-      {/* Modal para carregar da API */}
-      <LoadMapModal
-        isOpen={isLoadModalOpen}
-        onClose={() => setIsLoadModalOpen(false)}
-        onLoad={async (projectsId, fieldsId) => {
-          setIsLoading(true)
-          const result = await loadFromApi(projectsId, fieldsId, appParams.authToken)
-          setIsLoading(false)
-          if (result.success) {
-            setIsLoadModalOpen(false)
-            alert('Mapa carregado com sucesso!')
-          } else {
-            alert(`Erro ao carregar: ${result.error}`)
-          }
-        }}
-        isLoading={isLoading}
-      />
     </DndContext>
   )
 }
