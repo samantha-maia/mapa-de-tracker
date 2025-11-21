@@ -216,7 +216,7 @@ function RowItem({ id, rowId, viewMode = false }: RowItemProps) {
         <div className="flex flex-col items-center" style={{ gap: stakeGap }}>
           {Array.from({ length: stakeCount }).map((_, i) => {
             const statusId = tracker.stakeStatusIds?.[i]
-            const color = viewMode ? getStatusColor(statusId) : '#64748b' // slate-500 padrão em modo edição
+            const color = getStatusColor(statusId)
             return (
               <div 
                 key={i} 

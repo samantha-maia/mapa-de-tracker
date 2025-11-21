@@ -37,7 +37,7 @@ export function Tracker({ tracker, selected, viewMode = false }: Props) {
           <div className="flex flex-col items-center" style={{ gap: stakeGap }}>
             {Array.from({ length: tracker.ext.stake_quantity }).map((_, i) => {
               const statusId = tracker.stakeStatusIds?.[i]
-              const color = viewMode ? getStatusColor(statusId) : '#64748b' // slate-500 padrão em modo edição
+              const color = getStatusColor(statusId)
               return (
                 <div 
                   key={i} 
