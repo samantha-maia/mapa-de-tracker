@@ -150,7 +150,7 @@ export type LayoutActions = {
   loadFromApi: (projectsId: number, fieldsId: number, authToken?: string | null) => Promise<{ success: boolean; error?: string }> // Carrega o mapa da API
   downloadJson: () => void
   exportToDatabaseFormat: () => string // Exporta no formato do banco de dados
-  saveToApi: (projectId?: number | null, fieldId?: number | null, authToken?: string | null, fieldName?: string | null) => Promise<{ success: boolean; error?: string }> // Salva o mapa na API
+  saveToApi: (projectId?: number | null, fieldId?: number | null, authToken?: string | null, fieldName?: string | null) => Promise<{ success: boolean; error?: string; fieldId?: number | null }> // Salva o mapa na API
   // history
   undo: () => void
   redo: () => void
@@ -1911,7 +1911,11 @@ export const useLayoutStore = create<SectionState & LayoutActions>()(
           throw new Error(`Erro ao salvar: ${response.status} ${response.statusText} - ${errorText}`)
         }
         
-        return { success: true }
+        // Se for criação (POST), a API pode retornar o fieldId criado
+        const responseData = await response.json()
+        const createdFieldId = responseData?.fields_id || responseData?.id || null
+        
+        return { success: true, fieldId: createdFieldId }
       } catch (error) {
         console.error('Erro ao salvar na API:', error)
         return { 

@@ -15,7 +15,6 @@ interface FieldsStore {
   error: string | null
   fetchFields: (projectId: number, authToken?: string | null) => Promise<void>
   getFieldById: (id: number) => Field | undefined
-  createField: (projectId: number, name: string, authToken?: string | null) => Promise<{ success: boolean; field?: Field; error?: string }>
   updateFieldName: (fieldId: number, name: string, authToken?: string | null) => Promise<{ success: boolean; error?: string }>
 }
 
@@ -68,50 +67,6 @@ export const useFieldsStore = create<FieldsStore>((set, get) => ({
   
   getFieldById: (id: number) => {
     return get().fields.find(f => f.id === id)
-  },
-
-  createField: async (projectId: number, name: string, authToken?: string | null) => {
-    try {
-      const headers: HeadersInit = {
-        'Content-Type': 'application/json',
-      }
-      
-      if (authToken) {
-        headers['Authorization'] = `Bearer ${authToken}`
-      }
-      
-      const requestBody = {
-        projects_id: projectId,
-        name: name
-      }
-      
-      const response = await fetch(FIELDS_API_URL, {
-        method: 'POST',
-        headers,
-        body: JSON.stringify(requestBody)
-      })
-      
-      if (!response.ok) {
-        const errorText = await response.text()
-        throw new Error(`Erro ao criar campo: ${response.statusText} - ${errorText}`)
-      }
-      
-      const newField: Field = await response.json()
-      
-      // Adiciona o novo campo à lista
-      set((state) => ({
-        fields: [...state.fields, newField]
-      }))
-      
-      return { success: true, field: newField }
-    } catch (err) {
-      console.error('Erro ao criar campo:', err)
-      const errorMessage = err instanceof Error ? err.message : 'Erro desconhecido'
-      return { 
-        success: false, 
-        error: errorMessage
-      }
-    }
   },
 
   updateFieldName: async (fieldId: number, name: string, authToken?: string | null) => {

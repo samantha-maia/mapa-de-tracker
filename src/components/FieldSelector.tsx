@@ -11,7 +11,7 @@ export function FieldSelector() {
   const navigate = useNavigate()
   const location = useLocation()
   const appParams = useAppParams()
-  const { fields, loading, fetchFields, createField, updateFieldName } = useFieldsStore()
+  const { fields, loading, fetchFields, updateFieldName } = useFieldsStore()
   
   // Debug: verificar se os hooks estão funcionando
   if (typeof navigate !== 'function' || !location) {
@@ -144,29 +144,10 @@ export function FieldSelector() {
 
     try {
       if (selectedFieldId === '0') {
-        // Criar novo campo
-        if (!appParams.projectId) {
-          alert('ProjectId não encontrado')
-          setIsSavingName(false)
-          return
-        }
-
-        const projectIdNum = parseInt(appParams.projectId, 10)
-        if (isNaN(projectIdNum)) {
-          alert('ProjectId inválido')
-          setIsSavingName(false)
-          return
-        }
-
-        const result = await createField(projectIdNum, fieldName.trim(), appParams.authToken)
-        
-        if (result.success && result.field) {
-          // Navegar para o novo campo criado
-          navigate(buildUrl(result.field.id.toString(), 'edit'), { replace: true })
-          setIsEditingName(false)
-        } else {
-          alert(`Erro ao criar campo: ${result.error}`)
-        }
+        // Não pode criar campo aqui - campo é criado ao salvar o mapa na trackers-map
+        alert('Para criar um novo campo, use o botão "Criar novo campo" e depois salve o mapa')
+        setIsSavingName(false)
+        return
       } else if (selectedFieldId) {
         // Atualizar campo existente
         const fieldIdNum = parseInt(selectedFieldId, 10)

@@ -18,7 +18,6 @@ import type { TrackerType } from '../store/layoutStore'
 import type { ExternalTracker } from '../data/trackersCatalog'
 import { useLayoutStore as useStore } from '../store/layoutStore'
 import { useTrackersStore } from '../store/trackersStore'
-import { useFieldsStore } from '../store/fieldsStore'
 import { ROW_GRID_X, ROW_GRID_Y, TRACKER_GRID, GRID } from '../utils/gridConstants'
 import { useAppParams } from '../context/AppParamsContext'
 import { useNavigate } from 'react-router-dom'
@@ -84,7 +83,6 @@ export function Canvas() {
   const loadFromApi = useLayoutStore((s) => s.loadFromApi)
   const loadFromJson = useLayoutStore((s) => s.loadFromJson)
   const saveToApi = useLayoutStore((s) => s.saveToApi)
-  const createField = useFieldsStore((s) => s.createField)
   const navigate = useNavigate()
   const [isSaving, setIsSaving] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
@@ -118,28 +116,22 @@ export function Canvas() {
     try {
       const fieldName = fieldNameInput.trim()
       
-      // Criar o campo primeiro
-      const createResult = await createField(projectId, fieldName, appParams.authToken)
-      if (!createResult.success || !createResult.field) {
-        alert(`Erro ao criar campo: ${createResult.error || 'Erro desconhecido'}`)
-        setIsSaving(false)
-        return
-      }
-      
-      // Usar o ID do campo criado
-      const newFieldId = createResult.field.id
-      
-      // Salvar o mapa primeiro (incluindo o nome do campo)
-      const result = await saveToApi(projectId, newFieldId, appParams.authToken, fieldName)
+      // Salvar o mapa na API trackers-map (que cria o campo quando recebe name)
+      // fieldId = 0 indica que é criação de novo campo
+      const result = await saveToApi(projectId, 0, appParams.authToken, fieldName)
       if (result.success) {
-        // Depois de salvar com sucesso, navegar para o novo campo criado
-        const params = new URLSearchParams()
-        if (appParams.projectId) params.set('projectId', appParams.projectId)
-        params.set('fieldId', newFieldId.toString())
-        params.set('mode', 'edit')
-        if (appParams.authToken) params.set('authToken', appParams.authToken)
-        navigate(`/?${params.toString()}`, { replace: true })
+        // Se a API retornou o fieldId criado, navegar para ele
+        if (result.fieldId) {
+          const params = new URLSearchParams()
+          if (appParams.projectId) params.set('projectId', appParams.projectId)
+          params.set('fieldId', result.fieldId.toString())
+          params.set('mode', 'edit')
+          if (appParams.authToken) params.set('authToken', appParams.authToken)
+          navigate(`/?${params.toString()}`, { replace: true })
+        }
         alert('Mapa salvo com sucesso!')
+        // Fechar o modal e limpar
+        setFieldNameInput('')
       } else {
         alert(`Erro ao salvar: ${result.error}`)
       }
