@@ -19,6 +19,7 @@ export type ExtMeta = {
 
 export type Tracker = {
   id: string
+  databaseId?: number | null
   type: TrackerType
   title: string
   // Position only when loose on the free canvas
@@ -36,6 +37,7 @@ export type Tracker = {
 
 export type Row = {
   id: string
+  databaseId?: number | null
   trackerIds: string[]
   x?: number
   y?: number
@@ -47,6 +49,7 @@ export type Row = {
 
 export type RowGroup = {
   id: string
+  databaseId?: number | null
   rowIds: string[]
   x?: number
   y?: number
@@ -169,6 +172,13 @@ export type LayoutActions = {
 let idCounter = 0
 const nextId = (prefix: string) => `${prefix}_${++idCounter}`
 
+// Try to reuse numeric IDs that already exist in the database. If we can't parse one, return null.
+const parseDatabaseId = (value: any): number | null => {
+  if (value === null || value === undefined) return null
+  const num = typeof value === 'number' ? value : parseInt(String(value), 10)
+  return Number.isFinite(num) ? num : null
+}
+
 const snapToGrid = (value: number, grid: number) => Math.round(value / grid) * grid
 
 export const useLayoutStore = create<SectionState & LayoutActions>()(
@@ -195,7 +205,7 @@ export const useLayoutStore = create<SectionState & LayoutActions>()(
       set((s) => { s.historyPast.push(snap); s.historyFuture = [] })
       const id = nextId('row')
       set((s) => {
-        s.rows.push({ id, trackerIds: [], x: 20, y: 20 })
+        s.rows.push({ id, databaseId: null, trackerIds: [], x: 20, y: 20 })
       })
       return id
     },
@@ -206,7 +216,7 @@ export const useLayoutStore = create<SectionState & LayoutActions>()(
       const id = nextId('t')
       const title = 'Tracker'
       set((s) => {
-        s.trackersById[id] = { id, type, title, x, y }
+        s.trackersById[id] = { id, databaseId: null, type, title, x, y }
         s.looseIds.push(id)
       })
       return id
@@ -224,7 +234,7 @@ export const useLayoutStore = create<SectionState & LayoutActions>()(
         id = nextId('t')
         const title = 'Tracker'
         set((s) => {
-          s.trackersById[id] = { id, type: typeOrId, title }
+          s.trackersById[id] = { id, databaseId: null, type: typeOrId, title }
         })
       } else {
         id = typeOrId.id
@@ -444,11 +454,12 @@ export const useLayoutStore = create<SectionState & LayoutActions>()(
         s.looseIds = s.looseIds.filter((id) => !looseSelected.includes(id))
         // Adjust X position to account for row padding so trackers align correctly
         // The row's X position should be minX - padding offset
-        s.rows.push({ 
-          id: newRowId, 
-          trackerIds: ordered.map((t) => t.id), 
-          x: snapToGrid(minX - ROW_PADDING_OFFSET, 30), 
-          y: snapToGrid(minY, 30) 
+        s.rows.push({
+          id: newRowId,
+          databaseId: null,
+          trackerIds: ordered.map((t) => t.id),
+          x: snapToGrid(minX - ROW_PADDING_OFFSET, 30),
+          y: snapToGrid(minY, 30)
         })
         s.selectedIds = []
       })
@@ -492,6 +503,7 @@ export const useLayoutStore = create<SectionState & LayoutActions>()(
         
         s.rowGroups.push({ 
           id, 
+          databaseId: null,
           rowIds: [], 
           x: groupX, 
           y: groupY, 
@@ -647,6 +659,7 @@ export const useLayoutStore = create<SectionState & LayoutActions>()(
 
         s.rowGroups.push({ 
           id: newGroupId, 
+          databaseId: null,
           rowIds: rowsInOrder.map((r) => r.id), 
           x: 40, 
           y: 40, 
@@ -691,6 +704,7 @@ export const useLayoutStore = create<SectionState & LayoutActions>()(
             const newId = nextId('t')
             const newTracker: Tracker = {
               id: newId,
+              databaseId: null,
               type: tracker.type,
               title: `${tracker.title} (cópia)`,
               x: (tracker.x ?? 0) + offset,
@@ -720,6 +734,7 @@ export const useLayoutStore = create<SectionState & LayoutActions>()(
                 const newTrackerId = nextId('t')
                 const newTracker: Tracker = {
                   id: newTrackerId,
+                  databaseId: null,
                   type: tracker.type,
                   title: `${tracker.title} (cópia)`,
                   rowY: tracker.rowY,
@@ -732,6 +747,7 @@ export const useLayoutStore = create<SectionState & LayoutActions>()(
             
             const newRow: Row = {
               id: newRowId,
+              databaseId: null,
               trackerIds: newTrackerIds,
               x: (row.x ?? 0) + offset,
               y: (row.y ?? 0) + offset,
@@ -767,6 +783,7 @@ export const useLayoutStore = create<SectionState & LayoutActions>()(
                     const newTrackerId = nextId('t')
                     const newTracker: Tracker = {
                       id: newTrackerId,
+                      databaseId: null,
                       type: tracker.type,
                       title: `${tracker.title} (cópia)`,
                       rowY: tracker.rowY,
@@ -779,6 +796,7 @@ export const useLayoutStore = create<SectionState & LayoutActions>()(
                 
                 const newRow: Row = {
                   id: newRowId,
+                  databaseId: null,
                   trackerIds: newTrackerIds,
                   x: (row.x ?? 0) + offset,
                   y: (row.y ?? 0) + offset,
@@ -793,6 +811,7 @@ export const useLayoutStore = create<SectionState & LayoutActions>()(
             
             const newGroup: RowGroup = {
               id: newGroupId,
+              databaseId: null,
               rowIds: newRowIds,
               x: (group.x ?? 0) + offset,
               y: (group.y ?? 0) + offset,
@@ -844,7 +863,8 @@ export const useLayoutStore = create<SectionState & LayoutActions>()(
           .filter(Boolean) as Row[]
 
         const rows = rowsInGroup.map((r) => ({
-          id: r.id,
+          id: r.databaseId ?? r.id,
+          databaseId: r.databaseId ?? null,
           x: r.x ?? 0,
           y: r.y ?? 0,
           groupOffsetX: r.groupOffsetX ?? 0,
@@ -853,7 +873,8 @@ export const useLayoutStore = create<SectionState & LayoutActions>()(
           trackers: r.trackerIds.map((tid) => {
             const t = s.trackersById[tid]
             return {
-              id: t.id,
+              id: t.databaseId ?? t.id,
+              databaseId: t.databaseId ?? null,
               type: t.type,
               title: t.title,
               rowY: t.rowY ?? 0,
@@ -864,7 +885,8 @@ export const useLayoutStore = create<SectionState & LayoutActions>()(
         }))
 
         return {
-          id: g.id,
+          id: g.databaseId ?? g.id,
+          databaseId: g.databaseId ?? null,
           name: g.name,
           x: g.x ?? 0,
           y: g.y ?? 0,
@@ -878,7 +900,8 @@ export const useLayoutStore = create<SectionState & LayoutActions>()(
       const standaloneRows = s.rows
         .filter((r) => !r.groupId)
         .map((r) => ({
-          id: r.id,
+          id: r.databaseId ?? r.id,
+          databaseId: r.databaseId ?? null,
           x: r.x ?? 0,
           y: r.y ?? 0,
           isFinalized: r.isFinalized ?? false,
@@ -886,7 +909,8 @@ export const useLayoutStore = create<SectionState & LayoutActions>()(
           trackers: r.trackerIds.map((tid) => {
             const t = s.trackersById[tid]
             return {
-              id: t.id,
+              id: t.databaseId ?? t.id,
+              databaseId: t.databaseId ?? null,
               type: t.type,
               title: t.title,
               rowY: t.rowY ?? 0,
@@ -898,7 +922,7 @@ export const useLayoutStore = create<SectionState & LayoutActions>()(
 
       const loose = s.looseIds.map((id) => {
         const t = s.trackersById[id]
-        return { id: t.id, type: t.type, title: t.title, x: t.x ?? 0, y: t.y ?? 0, ext: t.ext, stakeStatusIds: t.stakeStatusIds }
+        return { id: t.databaseId ?? t.id, databaseId: t.databaseId ?? null, type: t.type, title: t.title, x: t.x ?? 0, y: t.y ?? 0, ext: t.ext, stakeStatusIds: t.stakeStatusIds }
       })
 
       const textElements = s.textElementIds.map((id) => {
@@ -1317,6 +1341,7 @@ export const useLayoutStore = create<SectionState & LayoutActions>()(
                 // Create section (group) from database
                 const section: RowGroup = {
                   id: sectionId,
+                  databaseId: parseDatabaseId(sectionData.id),
                   x: sectionData.x ?? 0,
                   y: sectionData.y ?? 0,
                   isFinalized: sectionData.isFinalized ?? false,
@@ -1332,6 +1357,7 @@ export const useLayoutStore = create<SectionState & LayoutActions>()(
                     const rowId = String(rowData.id)
                     const row: Row = {
                       id: rowId,
+                      databaseId: parseDatabaseId(rowData.id),
                       x: rowData.x ?? 0,
                       y: rowData.y ?? 0,
                       isFinalized: rowData.isFinalized ?? false,
@@ -1379,6 +1405,7 @@ export const useLayoutStore = create<SectionState & LayoutActions>()(
                         
                         const tracker: Tracker = {
                           id: trackerId,
+                          databaseId: parseDatabaseId(trackerData.id),
                           type: 'ext',
                           title: 'Tracker',
                           rowY: trackerData.rowY ?? 0,
@@ -1410,6 +1437,7 @@ export const useLayoutStore = create<SectionState & LayoutActions>()(
                 const sectionIdStr = String(sectionId)
                 const section: RowGroup = {
                   id: sectionIdStr,
+                  databaseId: parseDatabaseId(sectionId),
                   x: 0, // Will be set from row positions or saved separately
                   y: 0,
                   isFinalized: false,
@@ -1424,6 +1452,7 @@ export const useLayoutStore = create<SectionState & LayoutActions>()(
                   const rowId = String(rowData.id)
                   const row: Row = {
                     id: rowId,
+                    databaseId: parseDatabaseId(rowData.id),
                     x: 0, // Will be set from saved positions
                     y: 0,
                     isFinalized: false,
@@ -1471,6 +1500,7 @@ export const useLayoutStore = create<SectionState & LayoutActions>()(
                       
                       const tracker: Tracker = {
                         id: trackerId,
+                        databaseId: parseDatabaseId(trackerData.id),
                         type: 'ext',
                         title: 'Tracker',
                         rowY: trackerData.rowY ?? 0,
@@ -1491,6 +1521,7 @@ export const useLayoutStore = create<SectionState & LayoutActions>()(
                 // Create section (group) from database
                 const section: RowGroup = {
                   id: sectionId,
+                  databaseId: parseDatabaseId(sectionData.id),
                   x: sectionData.x ?? 0,
                   y: sectionData.y ?? 0,
                   isFinalized: sectionData.isFinalized ?? false,
@@ -1506,6 +1537,7 @@ export const useLayoutStore = create<SectionState & LayoutActions>()(
                     const rowId = String(rowData.id)
                     const row: Row = {
                       id: rowId,
+                      databaseId: parseDatabaseId(rowData.id),
                       x: rowData.x ?? 0,
                       y: rowData.y ?? 0,
                       isFinalized: rowData.isFinalized ?? false,
@@ -1524,6 +1556,7 @@ export const useLayoutStore = create<SectionState & LayoutActions>()(
                         
                         const tracker: Tracker = {
                           id: trackerId,
+                          databaseId: parseDatabaseId(trackerData.id),
                           type: 'ext',
                           title: 'Tracker',
                           rowY: trackerData.rowY ?? 0,
@@ -1567,6 +1600,7 @@ export const useLayoutStore = create<SectionState & LayoutActions>()(
               data.groups.forEach((groupData: any) => {
                 const group: RowGroup = {
                   id: String(groupData.id),
+                  databaseId: parseDatabaseId(groupData.databaseId ?? groupData.id),
                   x: groupData.x ?? 0,
                   y: groupData.y ?? 0,
                   isFinalized: groupData.isFinalized ?? false,
@@ -1581,6 +1615,7 @@ export const useLayoutStore = create<SectionState & LayoutActions>()(
                   groupData.rows.forEach((rowData: any) => {
                     const row: Row = {
                       id: String(rowData.id),
+                      databaseId: parseDatabaseId(rowData.databaseId ?? rowData.id),
                       x: rowData.x ?? 0,
                       y: rowData.y ?? 0,
                       isFinalized: rowData.isFinalized ?? false,
@@ -1596,6 +1631,7 @@ export const useLayoutStore = create<SectionState & LayoutActions>()(
                       rowData.trackers.forEach((trackerData: any) => {
                         const tracker: Tracker = {
                           id: String(trackerData.id),
+                          databaseId: parseDatabaseId(trackerData.databaseId ?? trackerData.id),
                           type: trackerData.type ?? 'ext',
                           title: trackerData.title ?? 'Tracker',
                           rowY: trackerData.rowY ?? 0,
@@ -1616,6 +1652,7 @@ export const useLayoutStore = create<SectionState & LayoutActions>()(
               data.standaloneRows.forEach((rowData: any) => {
                 const row: Row = {
                   id: String(rowData.id),
+                  databaseId: parseDatabaseId(rowData.databaseId ?? rowData.id),
                   x: rowData.x ?? 0,
                   y: rowData.y ?? 0,
                   isFinalized: rowData.isFinalized ?? false,
@@ -1629,6 +1666,7 @@ export const useLayoutStore = create<SectionState & LayoutActions>()(
                   rowData.trackers.forEach((trackerData: any) => {
                     const tracker: Tracker = {
                       id: String(trackerData.id),
+                      databaseId: parseDatabaseId(trackerData.databaseId ?? trackerData.id),
                       type: trackerData.type ?? 'ext',
                       title: trackerData.title ?? 'Tracker',
                       rowY: trackerData.rowY ?? 0,
@@ -1646,6 +1684,7 @@ export const useLayoutStore = create<SectionState & LayoutActions>()(
               data.loose.forEach((trackerData: any) => {
                 const tracker: Tracker = {
                   id: String(trackerData.id),
+                  databaseId: parseDatabaseId(trackerData.databaseId ?? trackerData.id),
                   type: trackerData.type ?? 'ext',
                   title: trackerData.title ?? 'Tracker',
                   x: trackerData.x ?? 0,
@@ -1806,16 +1845,22 @@ export const useLayoutStore = create<SectionState & LayoutActions>()(
         const serializedData = JSON.parse(s.serialize())
         
         // Remove stakeStatusIds dos trackers (não faz parte do formato da API de criação)
-        const cleanGroups = serializedData.groups.map((group: any) => ({
-          ...group,
-          rows: group.rows.map((row: any) => ({
-            ...row,
-            trackers: row.trackers.map((tracker: any) => {
-              const { stakeStatusIds, ...trackerWithoutStatus } = tracker
-              return trackerWithoutStatus
+        const cleanGroups = serializedData.groups.map((group: any) => {
+          const { databaseId: _groupDbId, ...groupRest } = group
+          return {
+            ...groupRest,
+            rows: group.rows.map((row: any) => {
+              const { databaseId: _rowDbId, ...rowRest } = row
+              return {
+                ...rowRest,
+                trackers: row.trackers.map((tracker: any) => {
+                  const { stakeStatusIds, databaseId: _trackerDbId, ...trackerWithoutStatus } = tracker
+                  return trackerWithoutStatus
+                })
+              }
             })
-          }))
-        }))
+          }
+        })
         
         // Não salva standaloneRows (rows que não estão em seções)
         const cleanStandaloneRows: any[] = []
@@ -1882,23 +1927,16 @@ export const useLayoutStore = create<SectionState & LayoutActions>()(
         const isEdit = fieldId !== null && fieldId !== undefined && fieldId !== 0
         const method = isEdit ? 'PUT' : 'POST'
         
-        // Para PUT: remove fields_id do payload (já está na URL)
-        // Para POST: mantém fields_id no payload se fornecido
-        if (isEdit && apiPayload.fields_id) {
-          delete apiPayload.fields_id
-        }
-        
         // Para POST (criação): se não tiver name mas tiver fieldName, adiciona
         // Para garantir que o name sempre seja enviado na criação
         if (!isEdit && !apiPayload.name && fieldName && fieldName.trim()) {
           apiPayload.name = fieldName.trim()
         }
         
-        // Monta a URL: PUT usa query param, POST não precisa
+        // Monta a URL: tanto PUT quanto POST usam a mesma URL base
+        // fields_id vai apenas no body
         const baseUrl = 'https://x4t7-ilri-ywed.n7d.xano.io/api:6L6t8cws/trackers-map'
-        const url = isEdit 
-          ? `${baseUrl}?fields_id=${fieldId}`
-          : baseUrl
+        const url = baseUrl
         
         const response = await fetch(url, {
           method,
@@ -1928,6 +1966,11 @@ export const useLayoutStore = create<SectionState & LayoutActions>()(
     exportToDatabaseFormat: () => {
       const s = get()
       
+      const groupById = new Map<string, RowGroup>()
+      s.rowGroups.forEach((group) => {
+        groupById.set(group.id, group)
+      })
+
       // Agrupa rows por groupId (sections_id)
       const rowsBySection = new Map<string, Row[]>()
       
@@ -1945,13 +1988,17 @@ export const useLayoutStore = create<SectionState & LayoutActions>()(
       rowsBySection.forEach((rowsInSection, sectionId) => {
         // Para cada row na seção
         rowsInSection.forEach((row, rowIndex) => {
+          const rowDbId = row.databaseId ?? parseDatabaseId(row.id)
+          const sectionDbId = sectionId === 'standalone' ? null : (groupById.get(row.groupId || '')?.databaseId ?? parseDatabaseId(sectionId))
+
           const rowData: any = {
-            id: parseInt(row.id.replace('row_', '')) || rowIndex + 1,
+            id: rowDbId,
             row_number: rowIndex + 1,
-            sections_id: sectionId === 'standalone' ? null : parseInt(sectionId) || null,
+            sections_id: sectionDbId,
             list_rows_trackers: row.trackerIds.map((trackerId, trackerIndex) => {
               const tracker = s.trackersById[trackerId]
               if (!tracker) return null
+              const trackerDbId = tracker.databaseId ?? parseDatabaseId(tracker.id)
               
               // Cria list_trackers_stakes baseado no stakeStatusIds
               const list_trackers_stakes: any[] = []
@@ -1965,7 +2012,7 @@ export const useLayoutStore = create<SectionState & LayoutActions>()(
                   
                   list_trackers_stakes.push({
                     // id: seria o ID do banco se já existir, ou null para criar novo
-                    rows_trackers_id: parseInt(tracker.id.replace('t_', '')) || trackerIndex + 1,
+                    rows_trackers_id: trackerDbId,
                     stakes_id: (tracker.ext?.id || 0) * 100 + stakeIndex, // ID temporário baseado no tracker e posição
                     stakes_statuses_id: statusId ?? 1, // Default para 1 (Não cravada) se null
                     position: position
@@ -1974,9 +2021,9 @@ export const useLayoutStore = create<SectionState & LayoutActions>()(
               }
               
               return {
-                id: parseInt(tracker.id.replace('t_', '')) || trackerIndex + 1,
+                id: trackerDbId,
                 position: String(trackerIndex + 1),
-                rows_id: parseInt(row.id.replace('row_', '')) || rowIndex + 1,
+                rows_id: rowDbId,
                 trackers_id: tracker.ext?.id || null,
                 rows_trackers_statuses_id: 1, // Default status
                 rowY: tracker.rowY ?? 0,
@@ -2122,5 +2169,3 @@ export const useLayoutStore = create<SectionState & LayoutActions>()(
     endDragText: () => set({ draggingTextId: undefined, dragTextStart: undefined }),
   }))
 )
-
-

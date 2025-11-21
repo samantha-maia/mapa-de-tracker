@@ -295,47 +295,58 @@ export function Row({ rowId, inGroup = false, viewMode = false }: Props) {
           <div className="flex gap-2" />
           <div />
         </div>
-         <SortableContext items={row.trackerIds} strategy={horizontalListSortingStrategy}>
+         {isEmpty ? (
            <div className={`flex flex-row items-start ${inGroup ? 'px-1 py-1' : 'px-2 py-2'}`} style={{ 
              height: 'fit-content',
-             minHeight: isEmpty ? '80px' : 'fit-content',
+             minHeight: '80px',
              position: 'relative',
-             width: inGroup ? 'fit-content' : undefined, // Largura baseada no conteúdo quando dentro do grupo
-             display: 'flex', // Garante que seja flex
-             flexDirection: 'row', // Garante direção horizontal
-             flexWrap: 'nowrap', // Garante que os trackers fiquem em uma única linha
-             gap: '8px' // gap-2 = 8px, garantindo espaçamento consistente
+             width: inGroup ? 'fit-content' : undefined,
+             display: 'flex',
+             flexDirection: 'row',
+             flexWrap: 'nowrap',
+             gap: '8px'
            }}>
-             {isEmpty ? (
-               <div className={`flex items-center justify-center w-full py-6 transition-all duration-200 ${
-                 isOver ? 'opacity-100' : 'opacity-60'
-               }`}>
-                 <div className="flex flex-col items-center gap-2 text-center">
-                   <div className="text-3xl text-gray-400">
-                     {isOver ? '↓' : '📦'}
-                   </div>
-                   <div className={`text-sm font-medium transition-colors ${
-                     isOver ? 'text-green-600' : 'text-gray-500'
-                   }`}>
-                     {isOver ? 'Solte aqui para adicionar' : 'Arraste trackers para cá'}
-                   </div>
-                   {!isOver && (
-                     <div className="text-xs text-gray-400">
-                       Ou arraste de outra row
-                     </div>
-                   )}
+             <div className={`flex items-center justify-center w-full py-6 transition-all duration-200 ${
+               isOver ? 'opacity-100' : 'opacity-60'
+             }`}>
+               <div className="flex flex-col items-center gap-2 text-center">
+                 <div className="text-3xl text-gray-400">
+                   {isOver ? '↓' : '📦'}
                  </div>
+                 <div className={`text-sm font-medium transition-colors ${
+                   isOver ? 'text-green-600' : 'text-gray-500'
+                 }`}>
+                   {isOver ? 'Solte aqui para adicionar' : 'Arraste trackers para cá'}
+                 </div>
+                 {!isOver && (
+                   <div className="text-xs text-gray-400">
+                     Ou arraste de outra row
+                   </div>
+                 )}
                </div>
-             ) : (
-               row.trackerIds.map((id) => (
+             </div>
+           </div>
+         ) : (
+           <SortableContext items={row.trackerIds} strategy={horizontalListSortingStrategy}>
+             <div className={`flex flex-row items-start ${inGroup ? 'px-1 py-1' : 'px-2 py-2'}`} style={{ 
+               height: 'fit-content',
+               minHeight: 'fit-content',
+               position: 'relative',
+               width: inGroup ? 'fit-content' : undefined,
+               display: 'flex',
+               flexDirection: 'row',
+               flexWrap: 'nowrap',
+               gap: '8px'
+             }}>
+               {row.trackerIds.map((id) => (
                  <div key={id} className="relative flex-shrink-0" style={{ height: 'fit-content' }}>
                    <RowItem id={id} rowId={rowId} viewMode={viewMode} />
                    {!viewMode && <RowItemRemoveButton id={id} />}
                  </div>
-               ))
-             )}
-           </div>
-         </SortableContext>
+               ))}
+             </div>
+           </SortableContext>
+         )}
       </div>
     </div>
   )

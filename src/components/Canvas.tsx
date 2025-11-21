@@ -608,6 +608,19 @@ export function Canvas() {
         if (over.startsWith('row:')) {
           const rowId = over.split(':')[1]
           addTrackerToRow({ id: data.id }, rowId)
+        } else if (over.startsWith('group:')) {
+          // Quando o drop é detectado no grupo, verificar se há rows vazias dentro dele
+          const groupId = over.split(':')[1]
+          const group = rowGroups.find(g => g.id === groupId)
+          if (group) {
+            // Encontrar rows vazias dentro do grupo
+            const emptyRowsInGroup = rows.filter(r => r.groupId === groupId && r.trackerIds.length === 0)
+            if (emptyRowsInGroup.length > 0) {
+              // Adicionar à primeira row vazia encontrada
+              const targetRowId = emptyRowsInGroup[0].id
+              addTrackerToRow({ id: data.id }, targetRowId)
+            }
+          }
         } else {
           const overId = over
           const hostRow = rows.find((r) => r.trackerIds.includes(overId))
