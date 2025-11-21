@@ -129,17 +129,16 @@ export function Canvas() {
       // Usar o ID do campo criado
       const newFieldId = createResult.field.id
       
-      // Navegar para o novo campo criado
-      const params = new URLSearchParams()
-      if (appParams.projectId) params.set('projectId', appParams.projectId)
-      params.set('fieldId', newFieldId.toString())
-      params.set('mode', 'edit')
-      if (appParams.authToken) params.set('authToken', appParams.authToken)
-      navigate(`/?${params.toString()}`, { replace: true })
-      
-      // Salvar o mapa (incluindo o nome do campo)
+      // Salvar o mapa primeiro (incluindo o nome do campo)
       const result = await saveToApi(projectId, newFieldId, appParams.authToken, fieldName)
       if (result.success) {
+        // Depois de salvar com sucesso, navegar para o novo campo criado
+        const params = new URLSearchParams()
+        if (appParams.projectId) params.set('projectId', appParams.projectId)
+        params.set('fieldId', newFieldId.toString())
+        params.set('mode', 'edit')
+        if (appParams.authToken) params.set('authToken', appParams.authToken)
+        navigate(`/?${params.toString()}`, { replace: true })
         alert('Mapa salvo com sucesso!')
       } else {
         alert(`Erro ao salvar: ${result.error}`)
@@ -903,7 +902,12 @@ export function Canvas() {
                   if (result.success) {
                     alert('Mapa salvo com sucesso!')
                   } else {
-                    alert(`Erro ao salvar: ${result.error}`)
+                    // Se o erro for sobre falta de seção, mostrar modal personalizado
+                    if (result.error && result.error.includes('seção')) {
+                      setShowSectionErrorModal(true)
+                    } else {
+                      alert(`Erro ao salvar: ${result.error}`)
+                    }
                   }
                 }}
                 disabled={isSaving}
