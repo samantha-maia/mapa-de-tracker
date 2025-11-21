@@ -175,9 +175,13 @@ export function Canvas() {
     }
   }, [zoom, setZoom, panX, panY, setPan])
 
-  // Load trackers from API when component mounts
+  // Load trackers from API when component mounts (apenas uma vez)
+  const hasLoadedTrackersRef = useRef(false)
   useEffect(() => {
-    useTrackersStore.getState().fetchTrackers(appParams.authToken)
+    if (!hasLoadedTrackersRef.current && appParams.authToken) {
+      hasLoadedTrackersRef.current = true
+      useTrackersStore.getState().fetchTrackers(appParams.authToken)
+    }
   }, [appParams.authToken])
 
   // Auto-load map from API when URL parameters are present
