@@ -1,15 +1,19 @@
 import { BrowserRouter, Routes, Route, Link, useLocation, Navigate, useNavigate } from 'react-router-dom'
 import { Canvas } from './components/Canvas'
 import { ViewCanvas } from './components/ViewCanvas'
+import { FieldSelector } from './components/FieldSelector'
 import { Eye } from 'lucide-react'
+import EditRoundedIcon from '@mui/icons-material/EditRounded'
 import { MdSolarPower } from 'react-icons/md'
 import { AppParamsProvider, useAppParams } from './context/AppParamsContext'
 import { useEffect } from 'react'
+import { useFieldsStore } from './store/fieldsStore'
 
 function Header() {
   const location = useLocation()
   const isViewMode = location.pathname === '/view'
   const appParams = useAppParams()
+  const fields = useFieldsStore((s) => s.fields)
   
   // Determina se é criação ou edição baseado no fieldId
   // Prioriza o contexto (que persiste) sobre a URL (que pode ser limpa)
@@ -23,6 +27,10 @@ function Header() {
   
   const isEditMode = fieldIdNum !== null && !isNaN(fieldIdNum) && fieldIdNum !== 0
   const isCreateMode = fieldIdNum === 0
+  const currentField =
+    fieldIdNum !== null && !isNaN(fieldIdNum)
+      ? fields.find((f) => f.id === fieldIdNum)
+      : undefined
 
   // Constrói a URL com os parâmetros preservados
   const buildUrlWithParams = (path: string, mode?: 'create' | 'edit' | 'view') => {
@@ -56,9 +64,26 @@ function Header() {
     <header className="border-b border-[#daeef6] border-solid-1 bg-white pt-3 pr-3 pb-3">
       <div className="flex items-center justify-between">
         <div className="flex flex-col gap-1">
-          <h1 className="flex items-center gap-2">
+          <h1 className="flex flex-wrap items-center gap-2 text-lg font-semibold text-gray-900">
             <MdSolarPower className="text-[#1d5cc6]" size={24} />
-            {getTitle()}
+            <span>{getTitle()}</span>
+            {currentField?.name && (
+              <>
+                <span>:</span>
+                <div className="flex flex-wrap items-center gap-2">
+                  <span className="text-base font-medium text-gray-700">{currentField.name}</span>
+                  <div id="field-name-editor-slot" className="flex items-center gap-2" />
+                  <button
+                    className="group flex items-center justify-center transition-colors border border-[#dadee6] bg-transparent hover:bg-[#487eda] hover:border-[#487eda]"
+                    style={{ width: '28px', height: '28px', borderRadius: '6px', borderWidth: '0.5px' }}
+                    title="Renomear campo"
+                    onClick={() => window.dispatchEvent(new Event('field-selector-edit'))}
+                  >
+                    <EditRoundedIcon style={{ fontSize: 16 }} className="text-[#1d5cc6] group-hover:text-white" />
+                  </button>
+                </div>
+              </>
+            )}
           </h1>
           <p className="text-[12px] font-medium" style={{ color: '#76787d' }}>
             {getDescription()}
@@ -94,7 +119,7 @@ function AutoRedirectToView() {
   const appParams = useAppParams()
 
   useEffect(() => {
-    // Só redireciona se estiver na rota raiz (/)
+    // Só redireciona se estiver na rota raiz (/) e tiver um fieldId
     if (location.pathname === '/') {
       const urlParams = new URLSearchParams(location.search)
       const mode = urlParams.get('mode')
@@ -102,6 +127,11 @@ function AutoRedirectToView() {
       const projectId = urlParams.get('projectId') !== null ? urlParams.get('projectId') : appParams.projectId
       const fieldId = urlParams.get('fieldId') !== null ? urlParams.get('fieldId') : appParams.fieldId
       const authToken = urlParams.get('authToken') !== null ? urlParams.get('authToken') : appParams.authToken
+
+      // Se não tiver fieldId, não faz nada (deixa o usuário escolher)
+      if (!fieldId) {
+        return
+      }
 
       // Se tiver todos os parâmetros e fieldId válido (≠ 0), e não tiver mode=edit ou mode=create, redireciona para /view
       if (projectId && fieldId && authToken && mode !== 'edit' && mode !== 'create') {
@@ -116,14 +146,6 @@ function AutoRedirectToView() {
           navigate(`/view?${params.toString()}`, { replace: true })
         }
       }
-      // Se não tiver fieldId mas tiver projectId e authToken, adiciona mode=create
-      else if (projectId && authToken && !fieldId && mode !== 'create' && mode !== 'edit') {
-        const params = new URLSearchParams()
-        params.set('projectId', projectId)
-        params.set('authToken', authToken)
-        params.set('mode', 'create')
-        navigate(`/?${params.toString()}`, { replace: true })
-      }
     }
   }, [location.pathname, location.search, appParams, navigate])
 
@@ -135,7 +157,29 @@ export default function App() {
     <BrowserRouter>
       <AppParamsProvider>
         <AutoRedirectToView />
-        <div className="flex h-screen flex-col">
+        <AppContent />
+      </AppParamsProvider>
+    </BrowserRouter>
+  )
+}
+
+function AppContent() {
+  const location = useLocation()
+  const appParams = useAppParams()
+  
+  // Verifica se há um fieldId selecionado (pode ser "0" para criar novo)
+  const urlParams = new URLSearchParams(location.search)
+  const urlFieldId = urlParams.get('fieldId')
+  const fieldIdToUse = appParams.fieldId !== null ? appParams.fieldId : urlFieldId
+  
+  // Só mostra Header e conteúdo se houver um fieldId selecionado
+  const hasFieldSelected = fieldIdToUse !== null
+
+  return (
+    <div className="flex h-screen flex-col">
+      <FieldSelector />
+      {hasFieldSelected && (
+        <>
           <Header />
           <div className="min-h-0 flex-1">
             <Routes>
@@ -144,8 +188,16 @@ export default function App() {
               <Route path="*" element={<Navigate to="/" replace />} />
             </Routes>
           </div>
+        </>
+      )}
+      {!hasFieldSelected && (
+        <div className="flex-1 flex items-center justify-center bg-gray-50">
+          <div className="text-center">
+            <p className="text-gray-600 text-lg mb-2">Selecione um campo para começar</p>
+            <p className="text-gray-500 text-sm">Escolha um campo existente ou crie um novo campo</p>
+          </div>
         </div>
-      </AppParamsProvider>
-    </BrowserRouter>
+      )}
+    </div>
   )
 }

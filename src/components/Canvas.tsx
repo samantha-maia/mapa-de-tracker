@@ -18,8 +18,10 @@ import type { TrackerType } from '../store/layoutStore'
 import type { ExternalTracker } from '../data/trackersCatalog'
 import { useLayoutStore as useStore } from '../store/layoutStore'
 import { useTrackersStore } from '../store/trackersStore'
+import { useFieldsStore } from '../store/fieldsStore'
 import { ROW_GRID_X, ROW_GRID_Y, TRACKER_GRID, GRID } from '../utils/gridConstants'
 import { useAppParams } from '../context/AppParamsContext'
+import { useNavigate } from 'react-router-dom'
 
 export function Canvas() {
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 0 } }))
@@ -80,10 +82,67 @@ export function Canvas() {
   const distributeSelected = useLayoutStore((s) => s.distributeSelected)
   const duplicateSelected = useLayoutStore((s) => s.duplicateSelected)
   const loadFromApi = useLayoutStore((s) => s.loadFromApi)
+  const loadFromJson = useLayoutStore((s) => s.loadFromJson)
   const saveToApi = useLayoutStore((s) => s.saveToApi)
+  const createField = useFieldsStore((s) => s.createField)
+  const navigate = useNavigate()
   const [isSaving, setIsSaving] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
+  const [showNameModal, setShowNameModal] = useState(false)
+  const [fieldNameInput, setFieldNameInput] = useState('')
   const appParams = useAppParams()
+  
+  const handleSaveWithName = async () => {
+    if (!fieldNameInput.trim()) {
+      alert('É necessário informar um nome para o campo')
+      return
+    }
+    
+    const projectId = appParams.projectId ? parseInt(appParams.projectId, 10) : null
+    if (!projectId) {
+      alert('ProjectId não encontrado')
+      return
+    }
+    
+    setShowNameModal(false)
+    setIsSaving(true)
+    
+    try {
+      const fieldName = fieldNameInput.trim()
+      
+      // Criar o campo primeiro
+      const createResult = await createField(projectId, fieldName, appParams.authToken)
+      if (!createResult.success || !createResult.field) {
+        alert(`Erro ao criar campo: ${createResult.error || 'Erro desconhecido'}`)
+        setIsSaving(false)
+        return
+      }
+      
+      // Usar o ID do campo criado
+      const newFieldId = createResult.field.id
+      
+      // Navegar para o novo campo criado
+      const params = new URLSearchParams()
+      if (appParams.projectId) params.set('projectId', appParams.projectId)
+      params.set('fieldId', newFieldId.toString())
+      params.set('mode', 'edit')
+      if (appParams.authToken) params.set('authToken', appParams.authToken)
+      navigate(`/?${params.toString()}`, { replace: true })
+      
+      // Salvar o mapa (incluindo o nome do campo)
+      const result = await saveToApi(projectId, newFieldId, appParams.authToken, fieldName)
+      if (result.success) {
+        alert('Mapa salvo com sucesso!')
+      } else {
+        alert(`Erro ao salvar: ${result.error}`)
+      }
+    } catch (error) {
+      alert(`Erro: ${error instanceof Error ? error.message : 'Erro desconhecido'}`)
+    } finally {
+      setIsSaving(false)
+      setFieldNameInput('')
+    }
+  }
 
   // Mouse wheel handler - standard canvas behavior
   const handleWheel = useCallback((e: WheelEvent) => {
@@ -153,11 +212,15 @@ export function Canvas() {
             console.error('Erro ao carregar mapa automaticamente:', error)
           })
       }
-      // Se fieldId == 0, não carrega nada (modo criação - tela vazia)
+      // Se fieldId == 0, limpa tudo e deixa tela vazia (modo criação)
       else if (fieldIdNum === 0) {
         // Reset do ref quando mudar para modo criação
         lastLoadedParamsRef.current = ''
-        console.log('Modo criação - tela vazia')
+        // Limpa todo o estado do canvas para começar do zero
+        loadFromJson('[]')
+        resetZoom()
+        resetPan()
+        console.log('Modo criação - tela vazia (estado limpo)')
       }
     }
   }, [appParams.projectId, appParams.fieldId, appParams.authToken, loadFromApi])
@@ -809,10 +872,19 @@ export function Canvas() {
               <button
                 className="w-full h-10 rounded-[12px] bg-blue-600 px-3 text-white text-xs font-medium hover:bg-blue-700 transition-colors shadow-sm disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
                 onClick={async () => {
-                  setIsSaving(true)
                   const projectId = appParams.projectId ? parseInt(appParams.projectId, 10) : null
                   const fieldId = appParams.fieldId ? parseInt(appParams.fieldId, 10) : null
-                  const result = await saveToApi(projectId, fieldId, appParams.authToken)
+                  
+                  // Se estiver criando um novo mapa (fieldId === 0), mostrar modal para pedir o nome
+                  if (fieldId === 0) {
+                    setFieldNameInput('')
+                    setShowNameModal(true)
+                    return
+                  }
+                  
+                  // Se não for criação, salvar diretamente
+                  setIsSaving(true)
+                  const result = await saveToApi(projectId, fieldId, appParams.authToken, null)
                   setIsSaving(false)
                   if (result.success) {
                     alert('Mapa salvo com sucesso!')
@@ -827,6 +899,55 @@ export function Canvas() {
             </div>
           </div>
         </div>
+        
+        {/* Modal para nome do campo */}
+        {showNameModal && (
+          <div 
+            className="fixed inset-0 z-[9999] flex items-center justify-center"
+            style={{ backgroundColor: 'rgba(0, 0, 0, 0.8)' }}
+          >
+            <div className="bg-white rounded-lg shadow-xl p-6 max-w-md w-full mx-4">
+              <h2 className="text-xl font-semibold text-gray-800 mb-4">Nome do Campo</h2>
+              <p className="text-sm text-gray-600 mb-4">
+                ⚠️ <strong>IMPORTANTE:</strong> Apenas itens dentro de seções serão salvos. Itens fora de seções não serão salvos.
+              </p>
+              <input
+                type="text"
+                value={fieldNameInput}
+                onChange={(e) => setFieldNameInput(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' && fieldNameInput.trim()) {
+                    handleSaveWithName()
+                  } else if (e.key === 'Escape') {
+                    setShowNameModal(false)
+                    setFieldNameInput('')
+                  }
+                }}
+                placeholder="Digite o nome do campo"
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent mb-4"
+                autoFocus
+              />
+              <div className="flex gap-3 justify-end">
+                <button
+                  onClick={() => {
+                    setShowNameModal(false)
+                    setFieldNameInput('')
+                  }}
+                  className="px-4 py-2 text-gray-700 bg-gray-200 rounded-lg hover:bg-gray-300 transition-colors"
+                >
+                  Cancelar
+                </button>
+                <button
+                  onClick={handleSaveWithName}
+                  className="px-4 py-2 text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition-colors"
+                >
+                  Salvar
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+        
         <div className="relative grow rounded-lg border-[#daeef6] border-solid-1 bg-white min-h-0">
           {/* Loading overlay */}
           {isLoading && (

@@ -150,7 +150,7 @@ export type LayoutActions = {
   loadFromApi: (projectsId: number, fieldsId: number, authToken?: string | null) => Promise<{ success: boolean; error?: string }> // Carrega o mapa da API
   downloadJson: () => void
   exportToDatabaseFormat: () => string // Exporta no formato do banco de dados
-  saveToApi: (projectId?: number | null, fieldId?: number | null, authToken?: string | null) => Promise<{ success: boolean; error?: string }> // Salva o mapa na API
+  saveToApi: (projectId?: number | null, fieldId?: number | null, authToken?: string | null, fieldName?: string | null) => Promise<{ success: boolean; error?: string }> // Salva o mapa na API
   // history
   undo: () => void
   redo: () => void
@@ -1794,9 +1794,15 @@ export const useLayoutStore = create<SectionState & LayoutActions>()(
       URL.revokeObjectURL(url)
     },
 
-    saveToApi: async (projectId?: number | null, fieldId?: number | null, authToken?: string | null) => {
+    saveToApi: async (projectId?: number | null, fieldId?: number | null, authToken?: string | null, fieldName?: string | null) => {
       try {
         const s = get()
+        
+        // Validação: é obrigatório ter pelo menos 1 seção (rowGroup) para salvar
+        if (s.rowGroups.length === 0) {
+          throw new Error('É obrigatório criar pelo menos 1 seção para salvar o mapa')
+        }
+        
         const serializedData = JSON.parse(s.serialize())
         
         // Remove stakeStatusIds dos trackers (não faz parte do formato da API de criação)
@@ -1811,18 +1817,11 @@ export const useLayoutStore = create<SectionState & LayoutActions>()(
           }))
         }))
         
-        const cleanStandaloneRows = serializedData.standaloneRows.map((row: any) => ({
-          ...row,
-          trackers: row.trackers.map((tracker: any) => {
-            const { stakeStatusIds, ...trackerWithoutStatus } = tracker
-            return trackerWithoutStatus
-          })
-        }))
+        // Não salva standaloneRows (rows que não estão em seções)
+        const cleanStandaloneRows: any[] = []
         
-        const cleanLoose = serializedData.loose.map((tracker: any) => {
-          const { stakeStatusIds, ...trackerWithoutStatus } = tracker
-          return trackerWithoutStatus
-        })
+        // Não salva loose trackers (trackers que não estão em seções)
+        const cleanLoose: any[] = []
         
         // Usa projectId da URL ou fallback para 7
         const finalProjectId = projectId || 7
@@ -1865,6 +1864,11 @@ export const useLayoutStore = create<SectionState & LayoutActions>()(
           apiPayload.fields_id = fieldId
         }
         
+        // Adiciona name se fornecido (para criação de novo campo)
+        if (fieldName && fieldName.trim()) {
+          apiPayload.name = fieldName.trim()
+        }
+        
         const headers: HeadersInit = {
           'Content-Type': 'application/json',
         }
@@ -1882,6 +1886,12 @@ export const useLayoutStore = create<SectionState & LayoutActions>()(
         // Para POST: mantém fields_id no payload se fornecido
         if (isEdit && apiPayload.fields_id) {
           delete apiPayload.fields_id
+        }
+        
+        // Para POST (criação): se não tiver name mas tiver fieldName, adiciona
+        // Para garantir que o name sempre seja enviado na criação
+        if (!isEdit && !apiPayload.name && fieldName && fieldName.trim()) {
+          apiPayload.name = fieldName.trim()
         }
         
         // Monta a URL: PUT usa query param, POST não precisa
