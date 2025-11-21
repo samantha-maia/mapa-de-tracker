@@ -599,7 +599,7 @@ export function Canvas() {
                   className="w-full h-10 rounded-[12px] bg-blue-600 px-3 text-white text-xs font-medium hover:bg-blue-700 transition-colors shadow-sm flex items-center justify-center" 
                   onClick={() => addEmptyRow()}
                 >
-                  + Criar Row
+                  + Criar fileira
                 </button>
                 <button 
                   className="w-full h-10 rounded-[12px] bg-emerald-600 px-3 text-white text-xs font-medium hover:bg-emerald-700 transition-colors shadow-sm disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center" 
@@ -616,26 +616,26 @@ export function Canvas() {
                   disabled={selectedIds.length === 0}
                   title={selectedIds.length === 0 ? 'Selecione trackers soltos para agrupar' : 'Agrupa trackers soltos selecionados em uma fileira'}
                 >
-                  Agrupar em Row
+                  Agrupar em Fileira
                 </button>
               </div>
             </div>
 
             {/* Group Actions */}
             <div className="rounded-lg border border-[#daeef6] border-solid-1 bg-white p-3">
-              <h4 className="text-xs font-semibold text-gray-700 mb-2 uppercase tracking-wide">Grupos</h4>
+              <h4 className="text-xs font-semibold text-gray-700 mb-2 uppercase tracking-wide">Seções</h4>
               <div className="space-y-2">
                 <button 
                   className="w-full h-10 rounded-[12px] bg-purple-600 px-3 text-white text-xs font-medium hover:bg-purple-700 transition-colors shadow-sm flex items-center justify-center" 
                   onClick={() => addEmptyRowGroup()}
                 >
-                  + Criar Grupo
+                  + Criar Seção
                 </button>
                 <button 
                   className="w-full h-10 rounded-[12px] bg-indigo-600 px-3 text-white text-xs font-medium hover:bg-indigo-700 transition-colors shadow-sm flex items-center justify-center" 
                   onClick={() => groupSelectedRowsIntoGroup()}
                 >
-                  Agrupar Fileiras
+                  Agrupar em Seção
                 </button>
               </div>
             </div>

@@ -33,7 +33,8 @@ export function AppParamsProvider({ children }: { children: ReactNode }) {
     
     // Só atualiza se houver novos parâmetros na URL
     // Isso preserva os valores anteriores se a URL for limpa
-    if (newParams.projectId || newParams.fieldId || newParams.authToken) {
+    // IMPORTANTE: verifica explicitamente !== null para permitir fieldId = "0"
+    if (newParams.projectId !== null || newParams.fieldId !== null || newParams.authToken !== null) {
       setParams(newParams)
       console.log('Parâmetros da URL capturados:', newParams)
     }

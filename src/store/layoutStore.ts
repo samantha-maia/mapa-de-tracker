@@ -1860,7 +1860,8 @@ export const useLayoutStore = create<SectionState & LayoutActions>()(
         }
         
         // Adiciona fields_id se fornecido
-        if (fieldId) {
+        // IMPORTANTE: verifica explicitamente !== null e !== undefined para permitir fieldId = 0
+        if (fieldId !== null && fieldId !== undefined) {
           apiPayload.fields_id = fieldId
         }
         
@@ -1872,8 +1873,25 @@ export const useLayoutStore = create<SectionState & LayoutActions>()(
           headers['Authorization'] = `Bearer ${authToken}`
         }
         
-        const response = await fetch('https://x4t7-ilri-ywed.n7d.xano.io/api:6L6t8cws/trackers-map', {
-          method: 'POST',
+        // Determina se é criação (POST) ou edição (PUT)
+        // Se fieldId existe e é diferente de 0, é edição
+        const isEdit = fieldId !== null && fieldId !== undefined && fieldId !== 0
+        const method = isEdit ? 'PUT' : 'POST'
+        
+        // Para PUT: remove fields_id do payload (já está na URL)
+        // Para POST: mantém fields_id no payload se fornecido
+        if (isEdit && apiPayload.fields_id) {
+          delete apiPayload.fields_id
+        }
+        
+        // Monta a URL: PUT usa query param, POST não precisa
+        const baseUrl = 'https://x4t7-ilri-ywed.n7d.xano.io/api:6L6t8cws/trackers-map'
+        const url = isEdit 
+          ? `${baseUrl}?fields_id=${fieldId}`
+          : baseUrl
+        
+        const response = await fetch(url, {
+          method,
           headers,
           body: JSON.stringify(apiPayload)
         })

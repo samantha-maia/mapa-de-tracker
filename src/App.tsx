@@ -17,8 +17,9 @@ function Header() {
   const urlFieldId = urlParams.get('fieldId')
   
   // Usa o contexto primeiro, depois a URL como fallback
-  const fieldIdToUse = appParams.fieldId || urlFieldId
-  const fieldIdNum = fieldIdToUse ? parseInt(fieldIdToUse, 10) : null
+  // IMPORTANTE: verifica explicitamente !== null para permitir fieldId = "0"
+  const fieldIdToUse = appParams.fieldId !== null ? appParams.fieldId : urlFieldId
+  const fieldIdNum = fieldIdToUse !== null ? parseInt(fieldIdToUse, 10) : null
   
   const isEditMode = fieldIdNum !== null && !isNaN(fieldIdNum) && fieldIdNum !== 0
   const isCreateMode = fieldIdNum === 0
@@ -26,9 +27,10 @@ function Header() {
   // Constrói a URL com os parâmetros preservados
   const buildUrlWithParams = (path: string, mode?: 'create' | 'edit' | 'view') => {
     const params = new URLSearchParams()
-    if (appParams.projectId) params.set('projectId', appParams.projectId)
-    if (appParams.fieldId) params.set('fieldId', appParams.fieldId)
-    if (appParams.authToken) params.set('authToken', appParams.authToken)
+    // IMPORTANTE: verifica explicitamente !== null para permitir valores "0"
+    if (appParams.projectId !== null) params.set('projectId', appParams.projectId)
+    if (appParams.fieldId !== null) params.set('fieldId', appParams.fieldId)
+    if (appParams.authToken !== null) params.set('authToken', appParams.authToken)
     if (mode) params.set('mode', mode)
     const queryString = params.toString()
     return queryString ? `${path}?${queryString}` : path
@@ -96,9 +98,10 @@ function AutoRedirectToView() {
     if (location.pathname === '/') {
       const urlParams = new URLSearchParams(location.search)
       const mode = urlParams.get('mode')
-      const projectId = urlParams.get('projectId') || appParams.projectId
-      const fieldId = urlParams.get('fieldId') || appParams.fieldId
-      const authToken = urlParams.get('authToken') || appParams.authToken
+      // IMPORTANTE: verifica explicitamente !== null para permitir valores "0"
+      const projectId = urlParams.get('projectId') !== null ? urlParams.get('projectId') : appParams.projectId
+      const fieldId = urlParams.get('fieldId') !== null ? urlParams.get('fieldId') : appParams.fieldId
+      const authToken = urlParams.get('authToken') !== null ? urlParams.get('authToken') : appParams.authToken
 
       // Se tiver todos os parâmetros e fieldId válido (≠ 0), e não tiver mode=edit ou mode=create, redireciona para /view
       if (projectId && fieldId && authToken && mode !== 'edit' && mode !== 'create') {
