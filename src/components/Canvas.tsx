@@ -837,6 +837,15 @@ export function Canvas() {
               </div>
             </div>
           )}
+          {/* Saving overlay */}
+          {isSaving && (
+            <div className="absolute inset-0 z-50 flex items-center justify-center bg-white bg-opacity-90 rounded-lg">
+              <div className="flex flex-col items-center gap-3">
+                <div className="w-12 h-12 border-4 border-green-600 border-t-transparent rounded-full animate-spin"></div>
+                <p className="text-sm font-medium text-gray-700">Salvando mapa...</p>
+              </div>
+            </div>
+          )}
           {/* canvas area with absolutely positioned rows and loose trackers */}
           <div className="relative h-full min-h-[560px] overflow-hidden p-3" ref={canvasRef}>
             <div 

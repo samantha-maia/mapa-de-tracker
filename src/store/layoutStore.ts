@@ -1713,10 +1713,55 @@ export const useLayoutStore = create<SectionState & LayoutActions>()(
         
         const data = await response.json()
         
-        // A API retorna um array de seções diretamente (formato do banco de dados)
-        // A função loadFromJson já sabe processar esse formato
-        const jsonString = JSON.stringify(data)
+        // Verifica se a resposta vem no novo formato com mapa e campo
+        let sectionsData = data
+        let mapTexts: any = {}
+        
+        if (data.mapa && Array.isArray(data.mapa)) {
+          // Novo formato: { mapa: [...], campo: { map_texts: {...} } }
+          sectionsData = data.mapa
+          if (data.campo && data.campo.map_texts) {
+            mapTexts = data.campo.map_texts
+          }
+        }
+        
+        // Carrega as seções usando loadFromJson
+        const jsonString = JSON.stringify(sectionsData)
         get().loadFromJson(jsonString)
+        
+        // Carrega os textos do map_texts se existirem
+        if (mapTexts && typeof mapTexts === 'object' && !Array.isArray(mapTexts)) {
+          set((s) => {
+            // Limpa textos existentes antes de carregar
+            s.textElementsById = {}
+            s.textElementIds = []
+            
+            // Converte map_texts (objeto) em array de textos
+            const textKeys = Object.keys(mapTexts)
+            if (textKeys.length > 0) {
+              textKeys.forEach((key) => {
+                const textData = mapTexts[key]
+                if (textData && typeof textData === 'object') {
+                  const text: TextElement = {
+                    id: String(textData.id || key),
+                    x: textData.x ?? 0,
+                    y: textData.y ?? 0,
+                    text: textData.text ?? 'Novo texto',
+                    fontSize: textData.fontSize ?? 14,
+                    color: textData.color ?? '#000000',
+                    fontWeight: textData.fontWeight ?? 'normal',
+                    fontStyle: textData.fontStyle ?? 'normal',
+                    textDecoration: textData.textDecoration ?? 'none',
+                    textAlign: textData.textAlign ?? 'left'
+                  }
+                  s.textElementsById[text.id] = text
+                  s.textElementIds.push(text.id)
+                }
+              })
+            }
+          })
+        }
+        
         return { success: true }
       } catch (error) {
         console.error('Erro ao carregar da API:', error)
@@ -1782,6 +1827,25 @@ export const useLayoutStore = create<SectionState & LayoutActions>()(
         // Usa projectId da URL ou fallback para 7
         const finalProjectId = projectId || 7
         
+        // Converte textElements (array) em map_texts (objeto)
+        const mapTexts: Record<string, any> = {}
+        if (serializedData.textElements && Array.isArray(serializedData.textElements)) {
+          serializedData.textElements.forEach((textElement: any) => {
+            mapTexts[textElement.id] = {
+              id: textElement.id,
+              x: textElement.x,
+              y: textElement.y,
+              text: textElement.text,
+              fontSize: textElement.fontSize,
+              color: textElement.color,
+              fontWeight: textElement.fontWeight,
+              fontStyle: textElement.fontStyle,
+              textDecoration: textElement.textDecoration,
+              textAlign: textElement.textAlign
+            }
+          })
+        }
+        
         // Formata os dados no formato esperado pela API
         const apiPayload: any = {
           json_map: {
@@ -1791,6 +1855,7 @@ export const useLayoutStore = create<SectionState & LayoutActions>()(
             textElements: serializedData.textElements,
             settings: serializedData.settings
           },
+          map_texts: mapTexts,
           projects_id: finalProjectId
         }
         
