@@ -88,12 +88,16 @@ export function Canvas() {
   const [isLoading, setIsLoading] = useState(false)
   const [showNameModal, setShowNameModal] = useState(false)
   const [showSectionErrorModal, setShowSectionErrorModal] = useState(false)
+  const [showSuccessModal, setShowSuccessModal] = useState(false)
+  const [showErrorModal, setShowErrorModal] = useState(false)
+  const [errorMessage, setErrorMessage] = useState('')
   const [fieldNameInput, setFieldNameInput] = useState('')
   const appParams = useAppParams()
   
   const handleSaveWithName = async () => {
     if (!fieldNameInput.trim()) {
-      alert('É necessário informar um nome para o campo')
+      setErrorMessage('É necessário informar um nome para o campo')
+      setShowErrorModal(true)
       return
     }
     
@@ -106,7 +110,8 @@ export function Canvas() {
     
     const projectId = appParams.projectId ? parseInt(appParams.projectId, 10) : null
     if (!projectId) {
-      alert('ProjectId não encontrado')
+      setErrorMessage('ProjectId não encontrado')
+      setShowErrorModal(true)
       return
     }
     
@@ -129,14 +134,16 @@ export function Canvas() {
           if (appParams.authToken) params.set('authToken', appParams.authToken)
           navigate(`/?${params.toString()}`, { replace: true })
         }
-        alert('Mapa salvo com sucesso!')
+        setShowSuccessModal(true)
         // Fechar o modal e limpar
         setFieldNameInput('')
       } else {
-        alert(`Erro ao salvar: ${result.error}`)
+        setErrorMessage(`Erro ao salvar: ${result.error}`)
+        setShowErrorModal(true)
       }
     } catch (error) {
-      alert(`Erro: ${error instanceof Error ? error.message : 'Erro desconhecido'}`)
+      setErrorMessage(`Erro: ${error instanceof Error ? error.message : 'Erro desconhecido'}`)
+      setShowErrorModal(true)
     } finally {
       setIsSaving(false)
       setFieldNameInput('')
@@ -675,7 +682,8 @@ export function Canvas() {
                       // Show feedback if no loose trackers selected
                       const looseSelected = selectedIds.filter((id) => looseIds.includes(id))
                       if (looseSelected.length === 0) {
-                        alert('Selecione trackers que estão soltos no canvas (não dentro de fileiras) para agrupar em uma fileira.')
+                        setErrorMessage('Selecione trackers que estão soltos no canvas (não dentro de fileiras) para agrupar em uma fileira.')
+                        setShowErrorModal(true)
                       }
                     }
                   }}
@@ -896,13 +904,14 @@ export function Canvas() {
                   const result = await saveToApi(projectId, fieldId, appParams.authToken, null)
                   setIsSaving(false)
                   if (result.success) {
-                    alert('Mapa salvo com sucesso!')
+                    setShowSuccessModal(true)
                   } else {
                     // Se o erro for sobre falta de seção, mostrar modal personalizado
                     if (result.error && result.error.includes('seção')) {
                       setShowSectionErrorModal(true)
                     } else {
-                      alert(`Erro ao salvar: ${result.error}`)
+                      setErrorMessage(`Erro ao salvar: ${result.error}`)
+                      setShowErrorModal(true)
                     }
                   }
                 }}
@@ -982,6 +991,55 @@ export function Canvas() {
                   className="px-4 py-2 text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition-colors"
                 >
                   Salvar
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+        
+        {/* Modal de sucesso */}
+        {showSuccessModal && (
+          <div 
+            className="fixed inset-0 z-[9999] flex items-center justify-center"
+            style={{ backgroundColor: 'rgba(0, 0, 0, 0.8)' }}
+          >
+            <div className="bg-white rounded-lg shadow-xl p-6 max-w-md w-full mx-4">
+              <h2 className="text-xl font-semibold text-gray-800 mb-4">✅ Sucesso</h2>
+              <p className="text-sm text-gray-600 mb-6">
+                Mapa salvo com sucesso!
+              </p>
+              <div className="flex justify-end">
+                <button
+                  onClick={() => setShowSuccessModal(false)}
+                  className="px-4 py-2 text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition-colors"
+                >
+                  OK
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+        
+        {/* Modal de erro genérico */}
+        {showErrorModal && (
+          <div 
+            className="fixed inset-0 z-[9999] flex items-center justify-center"
+            style={{ backgroundColor: 'rgba(0, 0, 0, 0.8)' }}
+          >
+            <div className="bg-white rounded-lg shadow-xl p-6 max-w-md w-full mx-4">
+              <h2 className="text-xl font-semibold text-red-600 mb-4">❌ Erro</h2>
+              <p className="text-sm text-gray-600 mb-6">
+                {errorMessage}
+              </p>
+              <div className="flex justify-end">
+                <button
+                  onClick={() => {
+                    setShowErrorModal(false)
+                    setErrorMessage('')
+                  }}
+                  className="px-4 py-2 text-white bg-red-600 rounded-lg hover:bg-red-700 transition-colors"
+                >
+                  OK
                 </button>
               </div>
             </div>
