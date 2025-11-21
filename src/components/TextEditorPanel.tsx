@@ -1,4 +1,5 @@
 import { AlignLeft, AlignCenter, AlignRight, Bold, Italic, Underline } from 'lucide-react'
+import { useState, useEffect } from 'react'
 import { useLayoutStore } from '../store/layoutStore'
 
 export function TextEditorPanel() {
@@ -10,6 +11,16 @@ export function TextEditorPanel() {
   // Find first selected text element
   const selectedTextId = selectedIds.find((id) => textElementIds.includes(id))
   const textElement = selectedTextId ? textElementsById[selectedTextId] : null
+
+  // Estado local para o tamanho da fonte (permite apagar e escrever)
+  const [fontSizeInput, setFontSizeInput] = useState<string>('')
+
+  // Atualizar o estado local quando o elemento de texto mudar
+  useEffect(() => {
+    if (textElement) {
+      setFontSizeInput(textElement.fontSize.toString())
+    }
+  }, [textElement?.id, textElement?.fontSize])
 
   if (!textElement) return null
 
@@ -43,8 +54,27 @@ export function TextEditorPanel() {
             type="number"
             min="8"
             max="72"
-            value={textElement.fontSize}
-            onChange={(e) => updateTextElement(textElement.id, { fontSize: Math.max(8, Math.min(72, parseInt(e.target.value) || 14)) })}
+            value={fontSizeInput}
+            onChange={(e) => {
+              // Permite apagar e escrever livremente
+              setFontSizeInput(e.target.value)
+            }}
+            onBlur={(e) => {
+              // Quando perder o foco, atualiza o valor no store
+              const value = parseInt(e.target.value)
+              if (!isNaN(value) && value >= 8 && value <= 72) {
+                updateTextElement(textElement.id, { fontSize: value })
+              } else {
+                // Se o valor for inválido, restaura o valor anterior
+                setFontSizeInput(textElement.fontSize.toString())
+              }
+            }}
+            onKeyDown={(e) => {
+              // Atualiza quando pressionar Enter
+              if (e.key === 'Enter') {
+                e.currentTarget.blur()
+              }
+            }}
             className="w-full rounded border border-gray-300 px-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
           />
         </div>

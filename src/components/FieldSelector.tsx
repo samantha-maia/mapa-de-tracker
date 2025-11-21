@@ -70,16 +70,6 @@ export function FieldSelector() {
     }
   }, [selectedFieldId, fields])
 
-  const buildUrl = (fieldId: string, mode?: 'create' | 'edit' | 'view') => {
-    const params = new URLSearchParams()
-    if (appParams.projectId) params.set('projectId', appParams.projectId)
-    params.set('fieldId', fieldId)
-    if (appParams.authToken) params.set('authToken', appParams.authToken)
-    if (mode) params.set('mode', mode)
-    
-    const queryString = params.toString()
-    return `${location.pathname}?${queryString}`
-  }
 
   const handleFieldChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const newFieldId = e.target.value
@@ -256,7 +246,7 @@ export function FieldSelector() {
             id="field-select"
             value={selectedFieldId || ''}
             onChange={handleFieldChange}
-            className="rounded-[12px] text-sm font-medium text-gray-700 focus:outline-none focus:ring-2 focus:ring-[#1d5cc6] focus:border-transparent"
+            className="field-selector-dropdown rounded-[12px] text-sm font-medium text-gray-700 focus:outline-none focus:ring-2 focus:ring-[#1d5cc6] focus:border-transparent transition-all duration-200 cursor-pointer"
             style={{
               width: '260px',
               height: '40px',
@@ -265,7 +255,8 @@ export function FieldSelector() {
               backgroundColor: '#fafafa',
               borderColor: '#dadee6',
               borderWidth: '1px',
-              borderStyle: 'solid'
+              borderStyle: 'solid',
+              boxShadow: '0 1px 2px 0 rgba(0, 0, 0, 0.05)'
             }}
             disabled={loading || isSavingName}
           >

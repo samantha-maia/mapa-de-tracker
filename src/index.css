@@ -28,14 +28,80 @@ select option[value=""] {
   color: #1d5cc6 !important;
 }
 
-/* Espaçamento para setinha do select */
-#field-select {
+/* Estilo melhorado para o dropdown - consistente em todos os SOs */
+.field-selector-dropdown {
   padding-right: 48px !important;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23666' d='M6 9L1 4h10z'/%3E%3C/svg%3E");
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 14 14'%3E%3Cpath fill='%231d5cc6' d='M7 10L2 5h10z'/%3E%3C/svg%3E");
   background-repeat: no-repeat;
   background-position: right 16px center;
-  background-size: 12px;
-  appearance: none;
+  background-size: 14px;
+  appearance: none !important;
+  -webkit-appearance: none !important;
+  -moz-appearance: none !important;
+  -ms-appearance: none !important;
+  cursor: pointer;
+  font-family: 'Lexend', sans-serif;
+  line-height: 1.5;
+  transition: all 0.2s ease-in-out;
+}
+
+/* Remove qualquer estilo nativo do sistema operacional */
+.field-selector-dropdown::-ms-expand {
+  display: none;
+}
+
+.field-selector-dropdown::-webkit-select {
   -webkit-appearance: none;
-  -moz-appearance: none;
+}
+
+.field-selector-dropdown:hover:not(:disabled) {
+  border-color: #1d5cc6 !important;
+  background-color: #ffffff !important;
+  box-shadow: 0 2px 4px 0 rgba(29, 92, 198, 0.1) !important;
+}
+
+.field-selector-dropdown:focus {
+  border-color: #1d5cc6 !important;
+  background-color: #ffffff !important;
+  box-shadow: 0 0 0 3px rgba(29, 92, 198, 0.1) !important;
+  outline: none !important;
+}
+
+.field-selector-dropdown:disabled {
+  opacity: 0.6 !important;
+  cursor: not-allowed !important;
+  background-color: #f3f4f6 !important;
+  border-color: #d1d5db !important;
+}
+
+/* Estilo das opções - melhor compatibilidade cross-browser */
+.field-selector-dropdown option {
+  padding: 10px 12px !important;
+  background-color: #ffffff !important;
+  color: #374151 !important;
+  font-family: 'Lexend', sans-serif !important;
+  font-size: 14px !important;
+  line-height: 1.5 !important;
+  min-height: 40px !important;
+}
+
+.field-selector-dropdown option:hover {
+  background-color: #f3f4f6 !important;
+}
+
+.field-selector-dropdown option:checked,
+.field-selector-dropdown option:focus {
+  background-color: #eff6ff !important;
+  color: #1d5cc6 !important;
+  font-weight: 500 !important;
+}
+
+/* Para Windows - garantir que o dropdown tenha aparência consistente */
+@media screen and (-ms-high-contrast: active), (-ms-high-contrast: none) {
+  .field-selector-dropdown {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 14 14'%3E%3Cpath fill='%231d5cc6' d='M7 10L2 5h10z'/%3E%3C/svg%3E") !important;
+    background-repeat: no-repeat !important;
+    background-position: right 16px center !important;
+    padding-right: 48px !important;
+  }
 }

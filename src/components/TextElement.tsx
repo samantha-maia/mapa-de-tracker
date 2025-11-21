@@ -22,18 +22,25 @@ export function TextElement({ textElement, selected, viewMode = false }: Props) 
     disabled: isEditing || viewMode
   })
 
-  // Focus and select text when entering edit mode
+  // Initialize content and focus when entering edit mode
   useEffect(() => {
     if (isEditing && editRef.current) {
+      // Set initial content only if it's different
+      if (editRef.current.textContent !== editText) {
+        editRef.current.textContent = editText
+      }
       editRef.current.focus()
-      // Select all text
+      // Move cursor to end of text
       const range = document.createRange()
-      range.selectNodeContents(editRef.current)
       const selection = window.getSelection()
-      selection?.removeAllRanges()
-      selection?.addRange(range)
+      if (editRef.current.firstChild) {
+        range.selectNodeContents(editRef.current)
+        range.collapse(false) // Collapse to end
+        selection?.removeAllRanges()
+        selection?.addRange(range)
+      }
     }
-  }, [isEditing])
+  }, [isEditing, editText])
 
   const handleDoubleClick = (e: React.MouseEvent) => {
     if (viewMode) return
@@ -63,7 +70,10 @@ export function TextElement({ textElement, selected, viewMode = false }: Props) 
   }
 
   const handleInput = (e: React.FormEvent<HTMLDivElement>) => {
-    setEditText(e.currentTarget.textContent || '')
+    // Update state but don't interfere with cursor position
+    // The browser handles cursor position naturally with contentEditable
+    const newText = e.currentTarget.textContent || ''
+    setEditText(newText)
   }
 
   const textStyle: React.CSSProperties = {
@@ -113,9 +123,7 @@ export function TextElement({ textElement, selected, viewMode = false }: Props) 
             onInput={handleInput}
             style={textStyle}
             className="outline-none"
-          >
-            {editText}
-          </div>
+          />
         ) : (
           <div style={textStyle}>
             {textElement.text || 'Novo texto'}
