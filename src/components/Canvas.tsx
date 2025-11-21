@@ -89,12 +89,20 @@ export function Canvas() {
   const [isSaving, setIsSaving] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
   const [showNameModal, setShowNameModal] = useState(false)
+  const [showSectionErrorModal, setShowSectionErrorModal] = useState(false)
   const [fieldNameInput, setFieldNameInput] = useState('')
   const appParams = useAppParams()
   
   const handleSaveWithName = async () => {
     if (!fieldNameInput.trim()) {
       alert('É necessário informar um nome para o campo')
+      return
+    }
+    
+    // Validar se há pelo menos uma seção antes de salvar
+    if (rowGroups.length === 0) {
+      setShowNameModal(false)
+      setShowSectionErrorModal(true)
       return
     }
     
@@ -875,6 +883,12 @@ export function Canvas() {
                   const projectId = appParams.projectId ? parseInt(appParams.projectId, 10) : null
                   const fieldId = appParams.fieldId ? parseInt(appParams.fieldId, 10) : null
                   
+                  // Validar se há pelo menos uma seção antes de salvar
+                  if (rowGroups.length === 0) {
+                    setShowSectionErrorModal(true)
+                    return
+                  }
+                  
                   // Se estiver criando um novo mapa (fieldId === 0), mostrar modal para pedir o nome
                   if (fieldId === 0) {
                     setFieldNameInput('')
@@ -899,6 +913,32 @@ export function Canvas() {
             </div>
           </div>
         </div>
+        
+        {/* Modal de erro - falta seção */}
+        {showSectionErrorModal && (
+          <div 
+            className="fixed inset-0 z-[9999] flex items-center justify-center"
+            style={{ backgroundColor: 'rgba(0, 0, 0, 0.8)' }}
+          >
+            <div className="bg-white rounded-lg shadow-xl p-6 max-w-md w-full mx-4">
+              <h2 className="text-xl font-semibold text-gray-800 mb-4">⚠️ Seção Obrigatória</h2>
+              <p className="text-sm text-gray-600 mb-4">
+                É obrigatório criar pelo menos <strong>1 seção</strong> para salvar o mapa.
+              </p>
+              <p className="text-sm text-gray-500 mb-6">
+                Apenas itens dentro de seções serão salvos. Itens fora de seções não serão salvos.
+              </p>
+              <div className="flex justify-end">
+                <button
+                  onClick={() => setShowSectionErrorModal(false)}
+                  className="px-4 py-2 text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition-colors"
+                >
+                  Entendi
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
         
         {/* Modal para nome do campo */}
         {showNameModal && (
