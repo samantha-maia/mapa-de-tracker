@@ -28,30 +28,61 @@ export function ViewCanvas() {
 
   // Auto-load map from API when URL parameters are present
   // Para visualização, só carrega se fieldId != 0
-  const hasAutoLoadedRef = useRef(false)
+  const lastLoadedParamsRef = useRef<string>('')
   useEffect(() => {
-    if (appParams.projectId && appParams.fieldId && !hasAutoLoadedRef.current) {
+    console.log('[ViewCanvas] useEffect disparado:', {
+      projectId: appParams.projectId,
+      fieldId: appParams.fieldId,
+      authToken: appParams.authToken ? 'presente' : 'ausente',
+      lastLoaded: lastLoadedParamsRef.current
+    })
+    
+    if (appParams.projectId && appParams.fieldId) {
       const projectIdNum = parseInt(appParams.projectId, 10)
       const fieldIdNum = parseInt(appParams.fieldId, 10)
       
+      // Cria uma chave única para os parâmetros atuais
+      const paramsKey = `${projectIdNum}-${fieldIdNum}`
+      
+      console.log('[ViewCanvas] Verificando se deve carregar:', {
+        projectIdNum,
+        fieldIdNum,
+        paramsKey,
+        lastLoadedParamsRef: lastLoadedParamsRef.current,
+        shouldLoad: !isNaN(projectIdNum) && !isNaN(fieldIdNum) && fieldIdNum !== 0 && lastLoadedParamsRef.current !== paramsKey
+      })
+      
       // Só carrega se fieldId != 0 (não faz sentido visualizar um mapa que não existe)
-      if (!isNaN(projectIdNum) && !isNaN(fieldIdNum) && fieldIdNum !== 0) {
-        hasAutoLoadedRef.current = true
+      // e se ainda não carregou esses parâmetros específicos
+      if (!isNaN(projectIdNum) && !isNaN(fieldIdNum) && fieldIdNum !== 0 && lastLoadedParamsRef.current !== paramsKey) {
+        lastLoadedParamsRef.current = paramsKey
+        console.log('[ViewCanvas] ✅ Carregando mapa automaticamente...', { projectId: projectIdNum, fieldId: fieldIdNum })
         setIsLoading(true)
         loadFromApi(projectIdNum, fieldIdNum, appParams.authToken)
           .then((result) => {
             setIsLoading(false)
             if (result.success) {
-              console.log('Mapa carregado com sucesso!')
+              console.log('[ViewCanvas] ✅ Mapa carregado com sucesso!')
             } else {
-              console.warn('Erro ao carregar mapa automaticamente:', result.error)
+              console.warn('[ViewCanvas] ⚠️ Erro ao carregar mapa automaticamente:', result.error)
             }
           })
           .catch((error) => {
             setIsLoading(false)
-            console.error('Erro ao carregar mapa automaticamente:', error)
+            console.error('[ViewCanvas] ❌ Erro ao carregar mapa automaticamente:', error)
           })
+      } else {
+        console.log('[ViewCanvas] ⏭️ Pulando carregamento:', {
+          reason: lastLoadedParamsRef.current === paramsKey ? 'já carregado' : 'condições não atendidas',
+          paramsKey,
+          lastLoaded: lastLoadedParamsRef.current
+        })
       }
+    } else {
+      console.log('[ViewCanvas] ⏭️ Sem projectId ou fieldId:', {
+        hasProjectId: !!appParams.projectId,
+        hasFieldId: !!appParams.fieldId
+      })
     }
   }, [appParams.projectId, appParams.fieldId, appParams.authToken, loadFromApi])
 

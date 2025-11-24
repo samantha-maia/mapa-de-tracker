@@ -73,8 +73,16 @@ export function FieldSelector() {
 
   const handleFieldChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const newFieldId = e.target.value
+    console.log('[FieldSelector] handleFieldChange chamado:', { 
+      newFieldId, 
+      currentFieldId: appParams.fieldId,
+      currentPath: location.pathname,
+      currentSearch: location.search
+    })
+    
     if (newFieldId === '') {
       // Se selecionar a opção vazia, limpar a seleção
+      console.log('[FieldSelector] Limpando seleção de campo')
       setSelectedFieldId(null)
       const params = new URLSearchParams()
       if (appParams.projectId) params.set('projectId', appParams.projectId)
@@ -85,7 +93,43 @@ export function FieldSelector() {
     }
     
     setSelectedFieldId(newFieldId)
-    // Ao selecionar um campo, não navega automaticamente - espera ação do usuário
+    
+    // Atualiza a URL para que o Canvas recarregue automaticamente
+    // Mantém a rota atual e o modo baseado na rota
+    const params = new URLSearchParams()
+    if (appParams.projectId) params.set('projectId', appParams.projectId)
+    params.set('fieldId', newFieldId)
+    if (appParams.authToken) params.set('authToken', appParams.authToken)
+    
+    // Determina o modo e a rota baseado na rota atual
+    const isViewMode = location.pathname === '/view'
+    const targetPath = isViewMode ? '/view' : '/'
+    
+    let finalUrl = ''
+    if (newFieldId === '0') {
+      // Modo criação
+      params.set('mode', 'create')
+      finalUrl = `/?${params.toString()}`
+    } else if (isViewMode) {
+      // Mantém modo view se estiver em /view
+      params.set('mode', 'view')
+      finalUrl = `/view?${params.toString()}`
+    } else {
+      // Modo edição (padrão para /)
+      params.set('mode', 'edit')
+      finalUrl = `/?${params.toString()}`
+    }
+    
+    console.log('[FieldSelector] Navegando para:', { 
+      finalUrl, 
+      params: Object.fromEntries(params.entries()),
+      isViewMode,
+      targetPath
+    })
+    
+    navigate(finalUrl, { replace: true })
+    
+    console.log('[FieldSelector] Navegação concluída')
   }
 
   const handleCreate = () => {
