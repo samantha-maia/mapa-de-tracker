@@ -171,9 +171,13 @@ function AppContent() {
   const urlParams = new URLSearchParams(location.search)
   const urlFieldId = urlParams.get('fieldId')
   const fieldIdToUse = appParams.fieldId !== null ? appParams.fieldId : urlFieldId
+  const mode = urlParams.get('mode')
   
-  // Só mostra Header e conteúdo se houver um fieldId selecionado
-  const hasFieldSelected = fieldIdToUse !== null
+  // Verifica se fieldId = "0" mas não está no modo create
+  const isFieldZeroWithoutCreate = fieldIdToUse === '0' && mode !== 'create'
+  
+  // Só mostra Header e conteúdo se houver um fieldId selecionado E não for fieldId=0 sem mode=create
+  const hasFieldSelected = fieldIdToUse !== null && !isFieldZeroWithoutCreate
 
   return (
     <div className="flex h-screen flex-col">

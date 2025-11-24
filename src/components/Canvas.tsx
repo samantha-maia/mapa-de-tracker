@@ -227,9 +227,27 @@ export function Canvas() {
         loadFromJson('[]')
         resetZoom()
         resetPan()
+        // Limpa seleção e histórico
+        setSelected([])
+        // Limpa histórico também
+        useLayoutStore.setState((state) => {
+          state.historyPast = []
+          state.historyFuture = []
+        })
       }
+    } else if (appParams.fieldId === '0' || appParams.fieldId === null) {
+      // Se não houver fieldId ou for "0", limpa tudo
+      lastLoadedParamsRef.current = ''
+      loadFromJson('[]')
+      resetZoom()
+      resetPan()
+      setSelected([])
+      useLayoutStore.setState((state) => {
+        state.historyPast = []
+        state.historyFuture = []
+      })
     }
-  }, [appParams.projectId, appParams.fieldId, appParams.authToken, loadFromApi])
+  }, [appParams.projectId, appParams.fieldId, appParams.authToken, loadFromApi, loadFromJson, resetZoom, resetPan, setSelected])
 
   // Add wheel event listener to canvas
   useEffect(() => {
