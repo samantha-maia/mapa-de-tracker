@@ -31,22 +31,11 @@ export function AppParamsProvider({ children }: { children: ReactNode }) {
       authToken: urlParams.get('authToken'),
     }
     
-    console.log('[AppParamsContext] location.search mudou:', {
-      locationSearch: location.search,
-      newParams,
-      currentParams: params,
-      willUpdate: newParams.projectId !== null || newParams.fieldId !== null || newParams.authToken !== null
-    })
-    
     // Só atualiza se houver novos parâmetros na URL
     // Isso preserva os valores anteriores se a URL for limpa
     // IMPORTANTE: verifica explicitamente !== null para permitir fieldId = "0"
     if (newParams.projectId !== null || newParams.fieldId !== null || newParams.authToken !== null) {
-      console.log('[AppParamsContext] Atualizando parâmetros:', { from: params, to: newParams })
       setParams(newParams)
-      console.log('[AppParamsContext] Parâmetros atualizados com sucesso')
-    } else {
-      console.log('[AppParamsContext] Mantendo parâmetros anteriores (nenhum parâmetro na URL)')
     }
     // Se a URL não tem parâmetros mas já temos valores, mantém os valores anteriores
     // Isso evita perder os parâmetros se a URL for limpa acidentalmente

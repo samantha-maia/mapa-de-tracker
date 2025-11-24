@@ -196,13 +196,6 @@ export function Canvas() {
   // Se fieldId == 0 → modo criação (tela vazia)
   const lastLoadedParamsRef = useRef<string>('')
   useEffect(() => {
-    console.log('[Canvas] useEffect disparado:', {
-      projectId: appParams.projectId,
-      fieldId: appParams.fieldId,
-      authToken: appParams.authToken ? 'presente' : 'ausente',
-      lastLoaded: lastLoadedParamsRef.current
-    })
-    
     if (appParams.projectId && appParams.fieldId) {
       const projectIdNum = parseInt(appParams.projectId, 10)
       const fieldIdNum = parseInt(appParams.fieldId, 10)
@@ -210,56 +203,31 @@ export function Canvas() {
       // Cria uma chave única para os parâmetros atuais
       const paramsKey = `${projectIdNum}-${fieldIdNum}`
       
-      console.log('[Canvas] Verificando se deve carregar:', {
-        projectIdNum,
-        fieldIdNum,
-        paramsKey,
-        lastLoadedParamsRef: lastLoadedParamsRef.current,
-        shouldLoad: !isNaN(projectIdNum) && !isNaN(fieldIdNum) && fieldIdNum !== 0 && lastLoadedParamsRef.current !== paramsKey,
-        isZero: fieldIdNum === 0
-      })
-      
       // Só carrega se fieldId != 0 (modo edição) e se ainda não carregou esses parâmetros
       if (!isNaN(projectIdNum) && !isNaN(fieldIdNum) && fieldIdNum !== 0 && lastLoadedParamsRef.current !== paramsKey) {
         lastLoadedParamsRef.current = paramsKey
-        console.log('[Canvas] ✅ Carregando mapa automaticamente...', { projectId: projectIdNum, fieldId: fieldIdNum })
         setIsLoading(true)
         loadFromApi(projectIdNum, fieldIdNum, appParams.authToken)
           .then((result) => {
             setIsLoading(false)
-            if (result.success) {
-              console.log('[Canvas] ✅ Mapa carregado com sucesso!')
-            } else {
-              console.warn('[Canvas] ⚠️ Erro ao carregar mapa automaticamente:', result.error)
+            if (!result.success) {
+              console.warn('Erro ao carregar mapa automaticamente:', result.error)
             }
           })
           .catch((error) => {
             setIsLoading(false)
-            console.error('[Canvas] ❌ Erro ao carregar mapa automaticamente:', error)
+            console.error('Erro ao carregar mapa automaticamente:', error)
           })
       }
       // Se fieldId == 0, limpa tudo e deixa tela vazia (modo criação)
       else if (fieldIdNum === 0) {
-        console.log('[Canvas] Modo criação detectado - limpando estado')
         // Reset do ref quando mudar para modo criação
         lastLoadedParamsRef.current = ''
         // Limpa todo o estado do canvas para começar do zero
         loadFromJson('[]')
         resetZoom()
         resetPan()
-        console.log('[Canvas] Modo criação - tela vazia (estado limpo)')
-      } else {
-        console.log('[Canvas] ⏭️ Pulando carregamento:', {
-          reason: lastLoadedParamsRef.current === paramsKey ? 'já carregado' : 'condições não atendidas',
-          paramsKey,
-          lastLoaded: lastLoadedParamsRef.current
-        })
       }
-    } else {
-      console.log('[Canvas] ⏭️ Sem projectId ou fieldId:', {
-        hasProjectId: !!appParams.projectId,
-        hasFieldId: !!appParams.fieldId
-      })
     }
   }, [appParams.projectId, appParams.fieldId, appParams.authToken, loadFromApi])
 
