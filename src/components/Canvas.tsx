@@ -17,7 +17,6 @@ import { useLayoutStore } from '../store/layoutStore'
 import type { TrackerType } from '../store/layoutStore'
 import type { ExternalTracker } from '../data/trackersCatalog'
 import { useLayoutStore as useStore } from '../store/layoutStore'
-import { useTrackersStore } from '../store/trackersStore'
 import { ROW_GRID_X, ROW_GRID_Y, TRACKER_GRID, GRID } from '../utils/gridConstants'
 import { useAppParams } from '../context/AppParamsContext'
 import { useNavigate } from 'react-router-dom'
@@ -181,15 +180,6 @@ export function Canvas() {
       setPan(newPanX, newPanY)
     }
   }, [zoom, setZoom, panX, panY, setPan])
-
-  // Load trackers from API when component mounts (apenas uma vez)
-  const hasLoadedTrackersRef = useRef(false)
-  useEffect(() => {
-    if (!hasLoadedTrackersRef.current && appParams.authToken) {
-      hasLoadedTrackersRef.current = true
-      useTrackersStore.getState().fetchTrackers(appParams.authToken)
-    }
-  }, [appParams.authToken])
 
   // Auto-load map from API when URL parameters are present
   // Se fieldId != 0 → modo edição (carrega dados)

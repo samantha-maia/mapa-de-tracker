@@ -18,9 +18,9 @@ export const useTrackersStore = create<TrackersStore>((set, get) => ({
   error: null,
   
   fetchTrackers: async (authToken?: string | null) => {
-    // Evita chamadas duplicadas se já estiver carregando ou se já tiver trackers carregados
+    // Evita apenas chamadas duplicadas simultâneas (se já estiver carregando)
     const state = get()
-    if (state.loading || (state.trackers.length > 0 && state.trackers !== TRACKERS_CATALOG)) {
+    if (state.loading) {
       return
     }
     

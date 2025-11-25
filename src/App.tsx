@@ -8,6 +8,7 @@ import { MdSolarPower } from 'react-icons/md'
 import { AppParamsProvider, useAppParams } from './context/AppParamsContext'
 import { useEffect } from 'react'
 import { useFieldsStore } from './store/fieldsStore'
+import { useTrackersStore } from './store/trackersStore'
 
 function Header() {
   const location = useLocation()
@@ -166,6 +167,11 @@ export default function App() {
 function AppContent() {
   const location = useLocation()
   const appParams = useAppParams()
+  
+  // Carrega trackers sempre que a aplicação abrir ou authToken mudar
+  useEffect(() => {
+    useTrackersStore.getState().fetchTrackers(appParams.authToken)
+  }, [appParams.authToken])
   
   // Verifica se há um fieldId selecionado (pode ser "0" para criar novo)
   const urlParams = new URLSearchParams(location.search)
