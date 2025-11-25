@@ -16,6 +16,7 @@ interface FieldsStore {
   fetchFields: (projectId: number, authToken?: string | null) => Promise<void>
   getFieldById: (id: number) => Field | undefined
   updateFieldName: (fieldId: number, name: string, authToken?: string | null) => Promise<{ success: boolean; error?: string }>
+  deleteField: (fieldId: number, authToken?: string | null) => Promise<{ success: boolean; error?: string }>
 }
 
 const FIELDS_API_URL = 'https://x4t7-ilri-ywed.n7d.xano.io/api:6L6t8cws/fields'
@@ -107,6 +108,41 @@ export const useFieldsStore = create<FieldsStore>((set, get) => ({
       return { 
         success: false, 
         error: errorMessage
+      }
+    }
+  },
+
+  deleteField: async (fieldId: number, authToken?: string | null) => {
+    try {
+      const headers: HeadersInit = {
+        'Content-Type': 'application/json',
+      }
+
+      if (authToken) {
+        headers['Authorization'] = `Bearer ${authToken}`
+      }
+
+      const response = await fetch(`${FIELDS_API_URL}/${fieldId}`, {
+        method: 'DELETE',
+        headers,
+      })
+
+      if (!response.ok) {
+        const errorText = await response.text()
+        throw new Error(`Erro ao excluir campo: ${response.statusText} - ${errorText}`)
+      }
+
+      set((state) => ({
+        fields: state.fields.filter((f) => f.id !== fieldId),
+      }))
+
+      return { success: true }
+    } catch (err) {
+      console.error('Erro ao excluir campo:', err)
+      const errorMessage = err instanceof Error ? err.message : 'Erro desconhecido'
+      return {
+        success: false,
+        error: errorMessage,
       }
     }
   }

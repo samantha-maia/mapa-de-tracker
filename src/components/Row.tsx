@@ -19,7 +19,7 @@ function RowItem({ id, rowId, viewMode = false }: RowItemProps) {
   const [isAltHovered, setIsAltHovered] = useState(false)
   const [altMouseStart, setAltMouseStart] = useState<{ x: number; y: number } | null>(null)
   
-  const { attributes, listeners, setNodeRef, transform, transition } = useSortable({ 
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ 
     id, 
     data: { from: 'row', rowId, trackerId: id },
     disabled: isDraggingVertical || viewMode
@@ -157,9 +157,11 @@ function RowItem({ id, rowId, viewMode = false }: RowItemProps) {
     position: 'relative',
     top: rowY,
     zIndex: isDraggingVertical ? 1000 : 'auto',
-    opacity: isDraggingVertical ? 0.8 : 1,
+    opacity: isDragging ? 0.75 : isDraggingVertical ? 0.8 : 1,
     flexShrink: 0, // Previne que o tracker encolha e cause sobreposição
-    //borderColor: isAtLimit ? '#ef4444' : undefined, // Red border when at limit
+    boxShadow: isDragging ? '0 20px 35px rgba(15, 23, 42, 0.25)' : undefined,
+    borderColor: isDragging ? '#3b82f6' : undefined,
+    cursor: isDragging ? 'grabbing' : undefined,
   }
   
   return (
@@ -169,7 +171,9 @@ function RowItem({ id, rowId, viewMode = false }: RowItemProps) {
       data-tracker-id={id}
       {...(isDraggingVertical || viewMode ? {} : attributes)} 
       {...(isDraggingVertical || viewMode ? {} : listeners)} 
-      className={`rounded border bg-white p-2 text-xs shadow-sm ${isDraggingVertical ? 'cursor-ns-resize' : 'cursor-move'} relative group`}
+      className={`rounded border bg-white p-2 text-xs shadow-sm ${
+        isDraggingVertical ? 'cursor-ns-resize' : 'cursor-move'
+      } relative group ${isDragging ? 'ring-2 ring-blue-300' : ''}`}
       onMouseDown={handleMouseDown}
       onMouseEnter={(e) => {
         if (e.altKey) {

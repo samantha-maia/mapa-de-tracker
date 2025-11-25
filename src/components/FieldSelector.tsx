@@ -3,7 +3,7 @@ import { createPortal } from 'react-dom'
 import { useFieldsStore } from '../store/fieldsStore'
 import { useAppParams } from '../context/AppParamsContext'
 import { useNavigate, useLocation } from 'react-router-dom'
-import { Eye, Save } from 'lucide-react'
+import { Eye, Save, Trash2 } from 'lucide-react'
 import AddCircleRoundedIcon from '@mui/icons-material/AddCircleRounded'
 import EditRoundedIcon from '@mui/icons-material/EditRounded'
 
@@ -11,7 +11,7 @@ export function FieldSelector() {
   const navigate = useNavigate()
   const location = useLocation()
   const appParams = useAppParams()
-  const { fields, loading, fetchFields, updateFieldName } = useFieldsStore()
+  const { fields, loading, fetchFields, updateFieldName, deleteField } = useFieldsStore()
   
   // Debug: verificar se os hooks estão funcionando
   if (typeof navigate !== 'function' || !location) {
@@ -22,7 +22,11 @@ export function FieldSelector() {
   const [fieldName, setFieldName] = useState<string>('')
   const [isEditingName, setIsEditingName] = useState(false)
   const [isSavingName, setIsSavingName] = useState(false)
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false)
+  const [isDeletingField, setIsDeletingField] = useState(false)
+  const [deleteError, setDeleteError] = useState<string | null>(null)
   const nameEditorSlot = typeof document !== 'undefined' ? document.getElementById('field-name-editor-slot') : null
+  const modalContainer = typeof document !== 'undefined' ? document.body : null
 
   // Buscar campos quando o projectId estiver disponível
   useEffect(() => {
@@ -205,9 +209,68 @@ export function FieldSelector() {
     setIsEditingName(false)
   }
 
+  const selectedField = selectedFieldId ? fields.find(f => f.id === parseInt(selectedFieldId, 10)) : null
+  const selectedFieldLabel = selectedField
+    ? selectedField.name || `Campo ${selectedField.field_number || selectedField.id}`
+    : 'este campo'
   const hasFieldSelected = selectedFieldId !== null && selectedFieldId !== ''
   const canEditOrView = hasFieldSelected && selectedFieldId !== '0'
   const showNameInput = hasFieldSelected && isEditingName && selectedFieldId !== '0'
+
+  const handleDeleteClick = () => {
+    if (!canEditOrView) return
+    setDeleteError(null)
+    setIsDeleteModalOpen(true)
+  }
+
+  const handleCloseDeleteModal = () => {
+    if (isDeletingField) return
+    setIsDeleteModalOpen(false)
+    setDeleteError(null)
+  }
+
+  const handleConfirmDelete = async () => {
+    if (!selectedFieldId || selectedFieldId === '0') return
+
+    const fieldIdNum = parseInt(selectedFieldId, 10)
+    if (isNaN(fieldIdNum)) {
+      setDeleteError('FieldId inválido')
+      return
+    }
+
+    setIsDeletingField(true)
+    setDeleteError(null)
+
+    try {
+      const result = await deleteField(fieldIdNum, appParams.authToken)
+      if (!result.success) {
+        setDeleteError(result.error || 'Não foi possível excluir o campo')
+        return
+      }
+
+      setIsDeleteModalOpen(false)
+      setSelectedFieldId(null)
+      setFieldName('')
+
+      const params = new URLSearchParams()
+      if (appParams.projectId) params.set('projectId', appParams.projectId)
+      if (appParams.authToken) params.set('authToken', appParams.authToken)
+      const queryString = params.toString()
+      navigate(queryString ? `${location.pathname}?${queryString}` : location.pathname, { replace: true })
+
+      if (appParams.projectId) {
+        const projectIdNum = parseInt(appParams.projectId, 10)
+        if (!isNaN(projectIdNum)) {
+          await fetchFields(projectIdNum, appParams.authToken)
+        }
+      }
+    } catch (error) {
+      console.error('Erro ao excluir campo:', error)
+      setDeleteError('Erro inesperado ao excluir campo')
+    } finally {
+      setIsDeletingField(false)
+    }
+  }
 
   const nameEditorContent = (
     <div className="flex items-center gap-2">
@@ -260,9 +323,52 @@ export function FieldSelector() {
         ? nameEditorContent
         : null
 
+  const deleteModalContent = (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4">
+      <div className="w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl">
+        <h3 className="text-lg font-semibold text-gray-900">Excluir campo?</h3>
+        <p className="mt-2 text-sm text-gray-600">
+          Tem certeza de que deseja excluir{' '}
+          <span className="font-medium text-gray-900">{selectedFieldLabel}</span>?
+          {' '}Essa ação não pode ser desfeita.
+        </p>
+        {deleteError && (
+          <div className="mt-4 rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">
+            {deleteError}
+          </div>
+        )}
+        <div className="mt-6 flex justify-end gap-3">
+          <button
+            onClick={handleCloseDeleteModal}
+            disabled={isDeletingField}
+            className="h-10 px-4 rounded-[12px] border border-gray-300 text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            Cancelar
+          </button>
+          <button
+            onClick={handleConfirmDelete}
+            disabled={isDeletingField}
+            className="h-10 px-4 rounded-[12px] bg-red-600 text-white text-sm font-medium hover:bg-red-700 transition-colors shadow-sm flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            <Trash2 size={14} />
+            {isDeletingField ? 'Excluindo...' : 'Excluir'}
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+
+  const deleteModal =
+    isDeleteModalOpen && modalContainer
+      ? createPortal(deleteModalContent, modalContainer)
+      : isDeleteModalOpen
+        ? deleteModalContent
+        : null
+
   return (
     <div className="w-full bg-white border-b border-[#daeef6] px-0 py-3">
       {nameEditorPortal}
+      {deleteModal}
       <div className="flex items-center gap-3">
         <div className="flex items-center gap-3">
           <select
@@ -323,6 +429,15 @@ export function FieldSelector() {
               >
                 <Eye size={14} />
                 Visualizar
+              </button>
+              <button
+                onClick={handleDeleteClick}
+                disabled={isDeletingField}
+                className="h-10 px-4 rounded-[12px] border border-red-200 text-red-600 text-xs font-medium hover:bg-red-50 hover:border-red-400 transition-colors shadow-sm flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                title="Excluir campo selecionado"
+              >
+                <Trash2 size={14} />
+                Excluir
               </button>
             </>
           )}
