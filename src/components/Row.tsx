@@ -283,12 +283,24 @@ export function Row({ rowId, inGroup = false, viewMode = false }: Props) {
           style={{ zIndex: -1 }} 
         />
       )}
+
+      {/* Row background quando dentro do grupo */}
+      {inGroup && (
+        <div
+          className={`absolute inset-0 rounded-md pointer-events-none border transition-all duration-200 ${
+            isOver ? 'border-blue-500 bg-blue-50/70' : 'border-blue-200 bg-blue-50/30'
+          }`}
+          style={{ zIndex: -1 }}
+        />
+      )}
       
       {/* Content */}
       <div className="relative" style={{ zIndex: 1 }}>
         <div 
           ref={inGroup || viewMode ? undefined : setRowDraggableRef} 
-          className={`flex cursor-move select-none items-center justify-between ${inGroup ? 'px-1 pt-1 pb-0' : 'px-4 pt-2 pb-0'}`} 
+          className={`flex cursor-move select-none items-center justify-between ${
+            inGroup ? 'px-1 pt-1 pb-0' : 'px-4 pt-2 pb-0'
+          }`} 
           {...(!inGroup && !viewMode ? attributes : {})} 
           {...(!inGroup && !viewMode ? listeners : {})}
         >
