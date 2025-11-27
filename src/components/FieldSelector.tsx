@@ -444,11 +444,8 @@ export function FieldSelector() {
           <div className="h-6 w-px bg-[#dadee6] mx-2" />
           <button
             onClick={handleCreate}
-            className="group flex items-center justify-center transition-colors bg-transparent hover:bg-[#487eda] hover:border-[#487eda]"
+            className="group flex items-center justify-center gap-2 h-10 px-4 rounded-[12px] transition-colors bg-transparent hover:bg-[#487eda] hover:border-[#487eda]"
             style={{
-              width: '40px',
-              height: '40px',
-              borderRadius: '8px',
               borderWidth: '1px',
               borderStyle: 'solid',
               borderColor: '#dadee6'
@@ -459,6 +456,9 @@ export function FieldSelector() {
               style={{ fontSize: 18 }}
               className="text-[#1d5cc6] group-hover:text-white"
             />
+            <span className="text-xs font-medium text-[#1d5cc6] group-hover:text-white">
+              Criar novo campo
+            </span>
           </button>
         </div>
         
