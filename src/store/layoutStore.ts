@@ -4,6 +4,7 @@ import { TRACKERS_CATALOG } from '../data/trackersCatalog'
 import { useTrackersStore } from './trackersStore'
 import { calculateRowHeight, calculateTrackerHeight } from '../utils/rowHeightUtils'
 import { GRID } from '../utils/gridConstants'
+import { apiRequest, API_ROUTES } from '../services/apiClient'
 
 //precisa adicionar o fields_id que vai vir no get da pagina
 
@@ -1727,31 +1728,13 @@ export const useLayoutStore = create<SectionState & LayoutActions>()(
 
     loadFromApi: async (projectsId: number, fieldsId: number, authToken?: string | null) => {
       try {
-        // Faz GET na API com os parâmetros
-        const params = new URLSearchParams({
-          projects_id: projectsId.toString(),
-          fields_id: fieldsId.toString()
+        const data = await apiRequest<any>(API_ROUTES.trackersMap, {
+          authToken,
+          query: {
+            projects_id: projectsId,
+            fields_id: fieldsId,
+          },
         })
-        
-        const headers: HeadersInit = {
-          'Content-Type': 'application/json',
-          'X-data-soure': 'dev',
-        }
-        
-        if (authToken) {
-          headers['Authorization'] = `Bearer ${authToken}`
-        }
-        
-        const response = await fetch(`https://x4t7-ilri-ywed.n7d.xano.io/api:6L6t8cws/trackers-map?${params.toString()}`, {
-          headers
-        })
-        
-        if (!response.ok) {
-          const errorText = await response.text()
-          throw new Error(`Erro ao carregar: ${response.status} ${response.statusText} - ${errorText}`)
-        }
-        
-        const data = await response.json()
         
         // Verifica se a resposta vem no novo formato com mapa e campo
         let sectionsData = data
@@ -1915,15 +1898,6 @@ export const useLayoutStore = create<SectionState & LayoutActions>()(
           apiPayload.name = fieldName.trim()
         }
         
-        const headers: HeadersInit = {
-          'Content-Type': 'application/json',
-          'X-data-soure': 'dev',
-        }
-        
-        if (authToken) {
-          headers['Authorization'] = `Bearer ${authToken}`
-        }
-        
         // Determina se é criação (POST) ou edição (PUT)
         // Se fieldId existe e é diferente de 0, é edição
         const isEdit = fieldId !== null && fieldId !== undefined && fieldId !== 0
@@ -1935,24 +1909,11 @@ export const useLayoutStore = create<SectionState & LayoutActions>()(
           apiPayload.name = fieldName.trim()
         }
         
-        // Monta a URL: tanto PUT quanto POST usam a mesma URL base
-        // fields_id vai apenas no body
-        const baseUrl = 'https://x4t7-ilri-ywed.n7d.xano.io/api:6L6t8cws/trackers-map'
-        const url = baseUrl
-        
-        const response = await fetch(url, {
+        const responseData = await apiRequest<any>(API_ROUTES.trackersMap, {
           method,
-          headers,
-          body: JSON.stringify(apiPayload)
+          authToken,
+          body: apiPayload,
         })
-        
-        if (!response.ok) {
-          const errorText = await response.text()
-          throw new Error(`Erro ao salvar: ${response.status} ${response.statusText} - ${errorText}`)
-        }
-        
-        // Se for criação (POST), a API pode retornar o fieldId criado
-        const responseData = await response.json()
         const createdFieldId = responseData?.fields_id || responseData?.id || null
         
         return { success: true, fieldId: createdFieldId }

@@ -1,8 +1,7 @@
 import { create } from 'zustand'
 import type { ExternalTracker } from '../data/trackersCatalog'
 import { TRACKERS_CATALOG } from '../data/trackersCatalog'
-
-const API_URL = 'https://x4t7-ilri-ywed.n7d.xano.io/api:T9-pCDOs/trackers_0'
+import { apiRequest, API_ROUTES } from '../services/apiClient'
 
 interface TrackersStore {
   trackers: ExternalTracker[]
@@ -27,22 +26,9 @@ export const useTrackersStore = create<TrackersStore>((set, get) => ({
     set({ loading: true, error: null })
     
     try {
-      const headers: HeadersInit = {
-        'Content-Type': 'application/json',
-        'X-data-soure': 'dev',
-      }
-      
-      if (authToken) {
-        headers['Authorization'] = `Bearer ${authToken}`
-      }
-      
-      const response = await fetch(API_URL, { headers })
-      
-      if (!response.ok) {
-        throw new Error(`Erro ao buscar trackers: ${response.statusText}`)
-      }
-      
-      const data: ExternalTracker[] = await response.json()
+      const data = await apiRequest<ExternalTracker[]>(API_ROUTES.trackersCatalog, {
+        authToken,
+      })
       
       // Filtrar apenas trackers que não foram deletados
       const activeTrackers = data.filter(t => t.deleted_at === null)

@@ -1,4 +1,5 @@
 import { create } from 'zustand'
+import { apiRequest, API_ROUTES } from '../services/apiClient'
 
 export interface Field {
   id: number
@@ -19,13 +20,6 @@ interface FieldsStore {
   deleteField: (fieldId: number, authToken?: string | null) => Promise<{ success: boolean; error?: string }>
 }
 
-const FIELDS_API_URL = 'https://x4t7-ilri-ywed.n7d.xano.io/api:6L6t8cws/fields'
-
-const getFieldsApiUrl = (projectId: number) => {
-  // Adiciona projectId como query parameter se necessário
-  return `${FIELDS_API_URL}?projects_id=${projectId}`
-}
-
 export const useFieldsStore = create<FieldsStore>((set, get) => ({
   fields: [],
   loading: false,
@@ -35,22 +29,10 @@ export const useFieldsStore = create<FieldsStore>((set, get) => ({
     set({ loading: true, error: null })
     
     try {
-      const headers: HeadersInit = {
-        'Content-Type': 'application/json',
-        'X-data-soure': 'dev',
-      }
-      
-      if (authToken) {
-        headers['Authorization'] = `Bearer ${authToken}`
-      }
-      
-      const response = await fetch(getFieldsApiUrl(projectId), { headers })
-      
-      if (!response.ok) {
-        throw new Error(`Erro ao buscar campos: ${response.statusText}`)
-      }
-      
-      const data: Field[] = await response.json()
+      const data = await apiRequest<Field[]>(API_ROUTES.fields, {
+        authToken,
+        query: { projects_id: projectId },
+      })
       
       // Filtrar apenas campos que não foram deletados (se houver campo deleted_at)
       const activeFields = data.filter((f: any) => f.deleted_at === null || f.deleted_at === undefined)
@@ -73,30 +55,14 @@ export const useFieldsStore = create<FieldsStore>((set, get) => ({
 
   updateFieldName: async (fieldId: number, name: string, authToken?: string | null) => {
     try {
-      const headers: HeadersInit = {
-        'Content-Type': 'application/json',
-        'X-data-soure': 'dev',
-      }
-      
-      if (authToken) {
-        headers['Authorization'] = `Bearer ${authToken}`
-      }
-      
-      const response = await fetch('https://x4t7-ilri-ywed.n7d.xano.io/api:6L6t8cws/field_name', {
+      const updatedField = await apiRequest<Field>(API_ROUTES.fieldName, {
         method: 'PUT',
-        headers,
-        body: JSON.stringify({
+        authToken,
+        body: {
           name: name,
-          fields_id: fieldId
-        })
+          fields_id: fieldId,
+        },
       })
-      
-      if (!response.ok) {
-        const errorText = await response.text()
-        throw new Error(`Erro ao atualizar campo: ${response.statusText} - ${errorText}`)
-      }
-      
-      const updatedField: Field = await response.json()
       
       // Atualiza o campo na lista
       set((state) => ({
@@ -116,24 +82,10 @@ export const useFieldsStore = create<FieldsStore>((set, get) => ({
 
   deleteField: async (fieldId: number, authToken?: string | null) => {
     try {
-      const headers: HeadersInit = {
-        'Content-Type': 'application/json',
-        'X-data-soure': 'dev',
-      }
-
-      if (authToken) {
-        headers['Authorization'] = `Bearer ${authToken}`
-      }
-
-      const response = await fetch(`${FIELDS_API_URL}/${fieldId}`, {
+      await apiRequest(`${API_ROUTES.fields}/${fieldId}`, {
         method: 'DELETE',
-        headers,
+        authToken,
       })
-
-      if (!response.ok) {
-        const errorText = await response.text()
-        throw new Error(`Erro ao excluir campo: ${response.statusText} - ${errorText}`)
-      }
 
       set((state) => ({
         fields: state.fields.filter((f) => f.id !== fieldId),
