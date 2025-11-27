@@ -1735,6 +1735,7 @@ export const useLayoutStore = create<SectionState & LayoutActions>()(
         
         const headers: HeadersInit = {
           'Content-Type': 'application/json',
+          'X-data-soure': 'dev',
         }
         
         if (authToken) {
@@ -1916,6 +1917,7 @@ export const useLayoutStore = create<SectionState & LayoutActions>()(
         
         const headers: HeadersInit = {
           'Content-Type': 'application/json',
+          'X-data-soure': 'dev',
         }
         
         if (authToken) {
