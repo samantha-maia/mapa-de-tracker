@@ -863,11 +863,12 @@ export const useLayoutStore = create<SectionState & LayoutActions>()(
           .map((rowId) => s.rows.find((r) => r.id === rowId))
           .filter(Boolean) as Row[]
 
-        const rows = rowsInGroup.map((r) => ({
+        const rows = rowsInGroup.map((r, rowIndex) => ({
           id: r.databaseId ?? r.id,
           databaseId: r.databaseId ?? null,
           x: r.x ?? 0,
           y: r.y ?? 0,
+          row_number: rowIndex + 1,
           groupOffsetX: r.groupOffsetX ?? 0,
           isFinalized: r.isFinalized ?? false,
           contourPath: r.contourPath ?? '',
@@ -902,11 +903,12 @@ export const useLayoutStore = create<SectionState & LayoutActions>()(
       // Standalone rows (not in any group)
       const standaloneRows = s.rows
         .filter((r) => !r.groupId)
-        .map((r) => ({
+        .map((r, rowIndex) => ({
           id: r.databaseId ?? r.id,
           databaseId: r.databaseId ?? null,
           x: r.x ?? 0,
           y: r.y ?? 0,
+          row_number: rowIndex + 1,
           isFinalized: r.isFinalized ?? false,
           contourPath: r.contourPath ?? '',
           trackers: r.trackerIds.map((tid, trackerIndex) => {
