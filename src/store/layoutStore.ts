@@ -858,7 +858,7 @@ export const useLayoutStore = create<SectionState & LayoutActions>()(
       const s = get()
 
       // Build nested structure: groups -> rows -> trackers
-      const groups = s.rowGroups.map((g) => {
+      const groups = s.rowGroups.map((g, groupIndex) => {
         const rowsInGroup = g.rowIds
           .map((rowId) => s.rows.find((r) => r.id === rowId))
           .filter(Boolean) as Row[]
@@ -871,7 +871,7 @@ export const useLayoutStore = create<SectionState & LayoutActions>()(
           groupOffsetX: r.groupOffsetX ?? 0,
           isFinalized: r.isFinalized ?? false,
           contourPath: r.contourPath ?? '',
-          trackers: r.trackerIds.map((tid) => {
+          trackers: r.trackerIds.map((tid, trackerIndex) => {
             const t = s.trackersById[tid]
             return {
               id: t.databaseId ?? t.id,
@@ -880,7 +880,8 @@ export const useLayoutStore = create<SectionState & LayoutActions>()(
               title: t.title,
               rowY: t.rowY ?? 0,
               ext: t.ext,
-              stakeStatusIds: t.stakeStatusIds
+              stakeStatusIds: t.stakeStatusIds,
+              position: trackerIndex + 1
             }
           })
         }))
@@ -893,6 +894,7 @@ export const useLayoutStore = create<SectionState & LayoutActions>()(
           y: g.y ?? 0,
           isFinalized: g.isFinalized ?? false,
           contourPath: g.contourPath ?? '',
+          section_number: groupIndex + 1,
           rows
         }
       })
@@ -907,7 +909,7 @@ export const useLayoutStore = create<SectionState & LayoutActions>()(
           y: r.y ?? 0,
           isFinalized: r.isFinalized ?? false,
           contourPath: r.contourPath ?? '',
-          trackers: r.trackerIds.map((tid) => {
+          trackers: r.trackerIds.map((tid, trackerIndex) => {
             const t = s.trackersById[tid]
             return {
               id: t.databaseId ?? t.id,
@@ -916,7 +918,8 @@ export const useLayoutStore = create<SectionState & LayoutActions>()(
               title: t.title,
               rowY: t.rowY ?? 0,
               ext: t.ext,
-              stakeStatusIds: t.stakeStatusIds
+              stakeStatusIds: t.stakeStatusIds,
+              position: trackerIndex + 1
             }
           })
         }))
