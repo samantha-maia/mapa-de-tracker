@@ -6,7 +6,7 @@ export interface Field {
   name?: string
   field_number?: number
   projects_id: number
-  created_at?: string
+  created_at?: number | string
   updated_at?: string
 }
 
@@ -44,7 +44,14 @@ export const useFieldsStore = create<FieldsStore>((set, get) => ({
       })
       
       // Filtrar apenas campos que não foram deletados (se houver campo deleted_at)
-      const activeFields = data.filter((f: any) => f.deleted_at === null || f.deleted_at === undefined)
+      // Preserva todos os campos incluindo created_at
+      const activeFields = data
+        .filter((f: any) => f.deleted_at === null || f.deleted_at === undefined)
+        .map((f: any) => ({
+          ...f,
+          // Garante que created_at seja preservado como número se vier como número
+          created_at: f.created_at !== undefined && f.created_at !== null ? f.created_at : undefined
+        }))
       
       set({ fields: activeFields, loading: false })
     } catch (err) {

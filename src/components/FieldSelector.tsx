@@ -1,6 +1,7 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { createPortal } from 'react-dom'
 import { useFieldsStore } from '../store/fieldsStore'
+import type { Field } from '../store/fieldsStore'
 import { useAppParams } from '../context/AppParamsContext'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { Eye, Save, Trash2 } from 'lucide-react'
@@ -11,6 +12,22 @@ const parseNumericParam = (value: string | null) => {
   if (!value) return null
   const parsed = parseInt(value, 10)
   return Number.isNaN(parsed) ? null : parsed
+}
+
+const getCreatedAtValue = (field: Field) => {
+  const createdAt = field.created_at
+  if (createdAt === undefined || createdAt === null) {
+    return Number.MAX_SAFE_INTEGER
+  }
+  if (typeof createdAt === 'number') {
+    return createdAt
+  }
+  const parsed = parseInt(String(createdAt), 10)
+  if (!Number.isNaN(parsed)) {
+    return parsed
+  }
+  const timestamp = Date.parse(String(createdAt))
+  return Number.isNaN(timestamp) ? Number.MAX_SAFE_INTEGER : timestamp
 }
 
 export function FieldSelector() {
@@ -31,6 +48,7 @@ export function FieldSelector() {
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false)
   const [isDeletingField, setIsDeletingField] = useState(false)
   const [deleteError, setDeleteError] = useState<string | null>(null)
+  const autoSelectedFieldRef = useRef(false)
   const nameEditorSlot = typeof document !== 'undefined' ? document.getElementById('field-name-editor-slot') : null
   const modalContainer = typeof document !== 'undefined' ? document.body : null
   const projectIdNum = parseNumericParam(appParams.projectId)
@@ -78,6 +96,30 @@ export function FieldSelector() {
       setIsEditingName(false)
     }
   }, [selectedFieldId, fields])
+
+  // Seleciona automaticamente o campo mais antigo (created_at) na inicialização
+  useEffect(() => {
+    if (autoSelectedFieldRef.current) return
+    if (selectedFieldId) return
+    if (fields.length === 0) return
+    if (!appParams.projectId || !appParams.companyId) return
+
+    const firstField = [...fields].sort((a, b) => getCreatedAtValue(a) - getCreatedAtValue(b))[0]
+    if (!firstField) return
+
+    autoSelectedFieldRef.current = true
+    const firstFieldId = firstField.id.toString()
+    setSelectedFieldId(firstFieldId)
+
+    const params = new URLSearchParams()
+    params.set('projectId', appParams.projectId)
+    params.set('companyId', appParams.companyId)
+    params.set('fieldId', firstFieldId)
+    params.set('mode', 'view')
+    if (appParams.authToken) params.set('authToken', appParams.authToken)
+
+    navigate(`/view?${params.toString()}`, { replace: true })
+  }, [fields, selectedFieldId, appParams.projectId, appParams.companyId, appParams.authToken, navigate])
 
 
   const handleFieldChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
@@ -451,11 +493,12 @@ export function FieldSelector() {
           <div className="h-6 w-px bg-[#dadee6] mx-2" />
           <button
             onClick={handleCreate}
-            className="group flex items-center justify-center transition-colors bg-transparent hover:bg-[#487eda] hover:border-[#487eda]"
+            className="group flex items-center justify-center gap-2 transition-colors bg-transparent hover:bg-[#487eda] hover:border-[#487eda]"
             style={{
-              width: '40px',
               height: '40px',
-              borderRadius: '8px',
+              paddingLeft: '14px',
+              paddingRight: '14px',
+              borderRadius: '12px',
               borderWidth: '1px',
               borderStyle: 'solid',
               borderColor: '#dadee6'
@@ -466,6 +509,7 @@ export function FieldSelector() {
               style={{ fontSize: 18 }}
               className="text-[#1d5cc6] group-hover:text-white"
             />
+            <span className="text-sm font-medium text-[#1d5cc6] group-hover:text-white">Criar campo</span>
           </button>
         </div>
         
