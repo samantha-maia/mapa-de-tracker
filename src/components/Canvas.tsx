@@ -128,6 +128,7 @@ export function Canvas() {
         if (result.fieldId) {
           const params = new URLSearchParams()
           if (appParams.projectId) params.set('projectId', appParams.projectId)
+          if (appParams.companyId) params.set('companyId', appParams.companyId)
           params.set('fieldId', result.fieldId.toString())
           params.set('mode', 'edit')
           if (appParams.authToken) params.set('authToken', appParams.authToken)

@@ -14,7 +14,7 @@ interface FieldsStore {
   fields: Field[]
   loading: boolean
   error: string | null
-  fetchFields: (projectId: number, authToken?: string | null) => Promise<void>
+  fetchFields: (projectId: number, companyId: number, authToken?: string | null) => Promise<void>
   getFieldById: (id: number) => Field | undefined
   updateFieldName: (fieldId: number, name: string, authToken?: string | null) => Promise<{ success: boolean; error?: string }>
   deleteField: (fieldId: number, authToken?: string | null) => Promise<{ success: boolean; error?: string }>
@@ -25,11 +25,20 @@ export const useFieldsStore = create<FieldsStore>((set, get) => ({
   loading: false,
   error: null,
   
-  fetchFields: async (projectId: number, authToken?: string | null) => {
+  fetchFields: async (projectId: number, companyId: number, authToken?: string | null) => {
     set({ loading: true, error: null })
     
+    if (!Number.isFinite(companyId)) {
+      set({ 
+        error: 'Company ID inválido',
+        loading: false,
+        fields: []
+      })
+      return
+    }
+    
     try {
-      const data = await apiRequest<Field[]>(API_ROUTES.fields, {
+      const data = await apiRequest<Field[]>(API_ROUTES.fields(companyId), {
         authToken,
         query: { projects_id: projectId },
       })
@@ -82,7 +91,7 @@ export const useFieldsStore = create<FieldsStore>((set, get) => ({
 
   deleteField: async (fieldId: number, authToken?: string | null) => {
     try {
-      await apiRequest(`${API_ROUTES.fields}/${fieldId}`, {
+      await apiRequest(`${API_ROUTES.fieldsBase}/${fieldId}`, {
         method: 'DELETE',
         authToken,
       })

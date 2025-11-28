@@ -1,7 +1,10 @@
 const API_BASE_URL = 'https://x4t7-ilri-ywed.n7d.xano.io'
 
+const FIELDS_BASE_PATH = '/api:6L6t8cws/fields'
+
 export const API_ROUTES = {
-  fields: '/api:6L6t8cws/fields',
+  fields: (companyId: string | number) => `${FIELDS_BASE_PATH}?company_id=${encodeURIComponent(String(companyId))}`,
+  fieldsBase: FIELDS_BASE_PATH,
   fieldName: '/api:6L6t8cws/field_name',
   trackersMap: '/api:6L6t8cws/trackers-map',
   trackersCatalog: '/api:T9-pCDOs/trackers_0',

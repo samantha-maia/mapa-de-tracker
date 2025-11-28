@@ -7,6 +7,12 @@ import { Eye, Save, Trash2 } from 'lucide-react'
 import AddCircleRoundedIcon from '@mui/icons-material/AddCircleRounded'
 import EditRoundedIcon from '@mui/icons-material/EditRounded'
 
+const parseNumericParam = (value: string | null) => {
+  if (!value) return null
+  const parsed = parseInt(value, 10)
+  return Number.isNaN(parsed) ? null : parsed
+}
+
 export function FieldSelector() {
   const navigate = useNavigate()
   const location = useLocation()
@@ -27,19 +33,18 @@ export function FieldSelector() {
   const [deleteError, setDeleteError] = useState<string | null>(null)
   const nameEditorSlot = typeof document !== 'undefined' ? document.getElementById('field-name-editor-slot') : null
   const modalContainer = typeof document !== 'undefined' ? document.body : null
+  const projectIdNum = parseNumericParam(appParams.projectId)
+  const companyIdNum = parseNumericParam(appParams.companyId)
 
   // Buscar campos quando o projectId estiver disponível
   useEffect(() => {
-    if (appParams.projectId) {
-      const projectIdNum = parseInt(appParams.projectId, 10)
-      if (!isNaN(projectIdNum)) {
-        fetchFields(projectIdNum, appParams.authToken).catch((err) => {
-          console.error('Erro ao buscar campos:', err)
-        })
-      }
+    if (projectIdNum !== null && companyIdNum !== null) {
+      fetchFields(projectIdNum, companyIdNum, appParams.authToken).catch((err) => {
+        console.error('Erro ao buscar campos:', err)
+      })
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [appParams.projectId, appParams.authToken])
+  }, [projectIdNum, companyIdNum, appParams.authToken])
 
   // Atualizar selectedFieldId quando appParams.fieldId mudar
   useEffect(() => {
@@ -82,6 +87,7 @@ export function FieldSelector() {
       setSelectedFieldId(null)
       const params = new URLSearchParams()
       if (appParams.projectId) params.set('projectId', appParams.projectId)
+      if (appParams.companyId) params.set('companyId', appParams.companyId)
       if (appParams.authToken) params.set('authToken', appParams.authToken)
       const queryString = params.toString()
       navigate(queryString ? `${location.pathname}?${queryString}` : location.pathname, { replace: true })
@@ -94,6 +100,7 @@ export function FieldSelector() {
     // Mantém a rota atual e o modo baseado na rota
     const params = new URLSearchParams()
     if (appParams.projectId) params.set('projectId', appParams.projectId)
+    if (appParams.companyId) params.set('companyId', appParams.companyId)
     params.set('fieldId', newFieldId)
     if (appParams.authToken) params.set('authToken', appParams.authToken)
     
@@ -119,6 +126,7 @@ export function FieldSelector() {
     // Navegar para criação de novo campo (fieldId = 0) no modo create
     const params = new URLSearchParams()
     if (appParams.projectId) params.set('projectId', appParams.projectId)
+    if (appParams.companyId) params.set('companyId', appParams.companyId)
     params.set('fieldId', '0')
     params.set('mode', 'create')
     if (appParams.authToken) params.set('authToken', appParams.authToken)
@@ -131,6 +139,7 @@ export function FieldSelector() {
       // Navegar para edição do campo selecionado no modo edit
       const params = new URLSearchParams()
       if (appParams.projectId) params.set('projectId', appParams.projectId)
+      if (appParams.companyId) params.set('companyId', appParams.companyId)
       params.set('fieldId', selectedFieldId)
       params.set('mode', 'edit')
       if (appParams.authToken) params.set('authToken', appParams.authToken)
@@ -142,12 +151,13 @@ export function FieldSelector() {
   const handleView = () => {
     if (selectedFieldId && selectedFieldId !== '0') {
       // Navegar para visualização do campo selecionado
-      navigate(`/view?${new URLSearchParams({
-        projectId: appParams.projectId || '',
-        fieldId: selectedFieldId,
-        authToken: appParams.authToken || '',
-        mode: 'view'
-      }).toString()}`, { replace: true })
+      const params = new URLSearchParams()
+      if (appParams.projectId) params.set('projectId', appParams.projectId)
+      if (appParams.companyId) params.set('companyId', appParams.companyId)
+      params.set('fieldId', selectedFieldId)
+      params.set('mode', 'view')
+      if (appParams.authToken) params.set('authToken', appParams.authToken)
+      navigate(`/view?${params.toString()}`, { replace: true })
     }
   }
 
@@ -179,11 +189,10 @@ export function FieldSelector() {
         if (result.success) {
           setIsEditingName(false)
           // Recarregar a lista de campos
-          if (appParams.projectId) {
-            const projectIdNum = parseInt(appParams.projectId, 10)
-            if (!isNaN(projectIdNum)) {
-              await fetchFields(projectIdNum, appParams.authToken)
-            }
+          if (projectIdNum !== null && companyIdNum !== null) {
+            await fetchFields(projectIdNum, companyIdNum, appParams.authToken)
+          } else {
+            console.warn('Não foi possível recarregar campos: projectId ou companyId inválido')
           }
         } else {
           alert(`Erro ao atualizar campo: ${result.error}`)
@@ -254,15 +263,13 @@ export function FieldSelector() {
 
       const params = new URLSearchParams()
       if (appParams.projectId) params.set('projectId', appParams.projectId)
+      if (appParams.companyId) params.set('companyId', appParams.companyId)
       if (appParams.authToken) params.set('authToken', appParams.authToken)
       const queryString = params.toString()
       navigate(queryString ? `${location.pathname}?${queryString}` : location.pathname, { replace: true })
 
-      if (appParams.projectId) {
-        const projectIdNum = parseInt(appParams.projectId, 10)
-        if (!isNaN(projectIdNum)) {
-          await fetchFields(projectIdNum, appParams.authToken)
-        }
+      if (projectIdNum !== null && companyIdNum !== null) {
+        await fetchFields(projectIdNum, companyIdNum, appParams.authToken)
       }
     } catch (error) {
       console.error('Erro ao excluir campo:', error)
@@ -444,8 +451,11 @@ export function FieldSelector() {
           <div className="h-6 w-px bg-[#dadee6] mx-2" />
           <button
             onClick={handleCreate}
-            className="group flex items-center justify-center gap-2 h-10 px-4 rounded-[12px] transition-colors bg-transparent hover:bg-[#487eda] hover:border-[#487eda]"
+            className="group flex items-center justify-center transition-colors bg-transparent hover:bg-[#487eda] hover:border-[#487eda]"
             style={{
+              width: '40px',
+              height: '40px',
+              borderRadius: '8px',
               borderWidth: '1px',
               borderStyle: 'solid',
               borderColor: '#dadee6'
@@ -456,9 +466,6 @@ export function FieldSelector() {
               style={{ fontSize: 18 }}
               className="text-[#1d5cc6] group-hover:text-white"
             />
-            <span className="text-xs font-medium text-[#1d5cc6] group-hover:text-white">
-              Criar novo campo
-            </span>
           </button>
         </div>
         

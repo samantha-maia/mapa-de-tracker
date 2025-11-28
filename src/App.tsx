@@ -38,6 +38,7 @@ function Header() {
     const params = new URLSearchParams()
     // IMPORTANTE: verifica explicitamente !== null para permitir valores "0"
     if (appParams.projectId !== null) params.set('projectId', appParams.projectId)
+    if (appParams.companyId !== null) params.set('companyId', appParams.companyId)
     if (appParams.fieldId !== null) params.set('fieldId', appParams.fieldId)
     if (appParams.authToken !== null) params.set('authToken', appParams.authToken)
     if (mode) params.set('mode', mode)
@@ -126,6 +127,7 @@ function AutoRedirectToView() {
       const mode = urlParams.get('mode')
       // IMPORTANTE: verifica explicitamente !== null para permitir valores "0"
       const projectId = urlParams.get('projectId') !== null ? urlParams.get('projectId') : appParams.projectId
+      const companyId = urlParams.get('companyId') !== null ? urlParams.get('companyId') : appParams.companyId
       const fieldId = urlParams.get('fieldId') !== null ? urlParams.get('fieldId') : appParams.fieldId
       const authToken = urlParams.get('authToken') !== null ? urlParams.get('authToken') : appParams.authToken
 
@@ -135,12 +137,13 @@ function AutoRedirectToView() {
       }
 
       // Se tiver todos os parâmetros e fieldId válido (≠ 0), e não tiver mode=edit ou mode=create, redireciona para /view
-      if (projectId && fieldId && authToken && mode !== 'edit' && mode !== 'create') {
+      if (projectId && companyId && fieldId && authToken && mode !== 'edit' && mode !== 'create') {
         const fieldIdNum = parseInt(fieldId, 10)
         if (!isNaN(fieldIdNum) && fieldIdNum !== 0) {
           // Preserva os parâmetros na URL ao redirecionar e adiciona mode=view
           const params = new URLSearchParams()
           params.set('projectId', projectId)
+          params.set('companyId', companyId)
           params.set('fieldId', fieldId)
           params.set('authToken', authToken)
           params.set('mode', 'view')
