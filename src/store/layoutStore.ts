@@ -57,6 +57,7 @@ export type RowGroup = {
   isFinalized?: boolean
   contourPath?: string
   name?: string
+  sectionNumber?: number
 }
 
 export type TextElement = {
@@ -181,6 +182,16 @@ const parseDatabaseId = (value: any): number | null => {
 }
 
 const snapToGrid = (value: number, grid: number) => Math.round(value / grid) * grid
+
+const getNextSectionNumber = (groups: RowGroup[]) => {
+  if (groups.length === 0) return 1
+  return (
+    groups.reduce((max, group) => {
+      const current = group.sectionNumber ?? 0
+      return current > max ? current : max
+    }, 0) + 1
+  )
+}
 
 export const useLayoutStore = create<SectionState & LayoutActions>()(
   immer((set, get) => ({
@@ -502,6 +513,7 @@ export const useLayoutStore = create<SectionState & LayoutActions>()(
         const groupX = Math.max(0, maxX + 50)
         const groupY = Math.max(0, maxY + 50)
         
+        const nextSectionNumber = getNextSectionNumber(s.rowGroups)
         s.rowGroups.push({ 
           id, 
           databaseId: null,
@@ -510,7 +522,8 @@ export const useLayoutStore = create<SectionState & LayoutActions>()(
           y: groupY, 
           name: `Grupo ${s.rowGroups.length + 1}`,
           isFinalized: false,
-          contourPath: ''
+          contourPath: '',
+          sectionNumber: nextSectionNumber
         })
       })
       return id
@@ -658,6 +671,7 @@ export const useLayoutStore = create<SectionState & LayoutActions>()(
         // Use the actual row X positions (which already account for padding when created)
         const minX = Math.min(...rowsInOrder.map(r => r.x ?? 0))
 
+        const nextSectionNumber = getNextSectionNumber(s.rowGroups)
         s.rowGroups.push({ 
           id: newGroupId, 
           databaseId: null,
@@ -666,7 +680,8 @@ export const useLayoutStore = create<SectionState & LayoutActions>()(
           y: 40, 
           name: `Grupo ${s.rowGroups.length + 1}`,
           isFinalized: false,
-          contourPath: ''
+          contourPath: '',
+          sectionNumber: nextSectionNumber
         })
         
         // Update rows to reference the group
@@ -827,6 +842,7 @@ export const useLayoutStore = create<SectionState & LayoutActions>()(
               ? `${baseGroupName}_${parseInt(groupSuffixMatch[1], 10) + 1}`
               : `${baseGroupName}_1`
 
+            const nextSectionNumber = getNextSectionNumber(s.rowGroups)
             const newGroup: RowGroup = {
               id: newGroupId,
               databaseId: null,
@@ -835,7 +851,8 @@ export const useLayoutStore = create<SectionState & LayoutActions>()(
               y: (group.y ?? 0) + offset,
               isFinalized: false,
               contourPath: '',
-              name: newGroupName
+              name: newGroupName,
+              sectionNumber: nextSectionNumber
             }
             s.rowGroups.push(newGroup)
             newIds.push(newGroupId)
@@ -1370,6 +1387,7 @@ export const useLayoutStore = create<SectionState & LayoutActions>()(
                   isFinalized: sectionData.isFinalized ?? false,
                   contourPath: sectionData.contourPath ?? '',
                   name: sectionData.section_number !== undefined ? `Section ${sectionData.section_number}` : `Section ${sectionId}`,
+                  sectionNumber: sectionData.section_number,
                   rowIds: sectionData.rows ? sectionData.rows.map((rowData: any) => String(rowData.id)) : []
                 }
                 s.rowGroups.push(section)
@@ -1458,6 +1476,9 @@ export const useLayoutStore = create<SectionState & LayoutActions>()(
               // Create groups (sections) and their rows
               rowsBySection.forEach((rowsInSection, sectionId) => {
                 const sectionIdStr = String(sectionId)
+                const inferredSectionNumber =
+                  rowsInSection.find((rowData: any) => rowData.section_number !== undefined)?.section_number ??
+                  rowsInSection[0]?.sections?.section_number
                 const section: RowGroup = {
                   id: sectionIdStr,
                   databaseId: parseDatabaseId(sectionId),
@@ -1466,7 +1487,8 @@ export const useLayoutStore = create<SectionState & LayoutActions>()(
                   isFinalized: false,
                   contourPath: '',
                   name: `Section ${sectionId}`,
-                  rowIds: rowsInSection.map((rowData: any) => String(rowData.id))
+                  rowIds: rowsInSection.map((rowData: any) => String(rowData.id)),
+                  sectionNumber: inferredSectionNumber
                 }
                 s.rowGroups.push(section)
                 
@@ -1550,6 +1572,7 @@ export const useLayoutStore = create<SectionState & LayoutActions>()(
                   isFinalized: sectionData.isFinalized ?? false,
                   contourPath: sectionData.contourPath ?? '',
                   name: `Section ${sectionData.section_number}`,
+                  sectionNumber: sectionData.section_number,
                   rowIds: sectionData.rows ? sectionData.rows.map((rowData: any) => String(rowData.id)) : []
                 }
                 s.rowGroups.push(section)
@@ -1629,7 +1652,8 @@ export const useLayoutStore = create<SectionState & LayoutActions>()(
                   isFinalized: groupData.isFinalized ?? false,
                   contourPath: groupData.contourPath ?? '',
                   name: groupData.name,
-                  rowIds: groupData.rows ? groupData.rows.map((rowData: any) => String(rowData.id)) : []
+                  rowIds: groupData.rows ? groupData.rows.map((rowData: any) => String(rowData.id)) : [],
+                  sectionNumber: groupData.section_number
                 }
                 s.rowGroups.push(group)
 

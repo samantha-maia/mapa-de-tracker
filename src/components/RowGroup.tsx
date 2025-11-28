@@ -15,6 +15,12 @@ type Props = { groupId: string; viewMode?: boolean }
 export function RowGroup({ groupId, viewMode = false }: Props) {
   const group = useLayoutStore((s) => s.rowGroups.find((g) => g.id === groupId))
   const rowIdsInGroup = group?.rowIds ?? []
+  const fallbackSectionNumber = useLayoutStore(
+    React.useCallback((s) => {
+      const index = s.rowGroups.findIndex((g) => g.id === groupId)
+      return index >= 0 ? index + 1 : undefined
+    }, [groupId])
+  )
 
   const groupRef = useRef<HTMLDivElement | null>(null)
   
@@ -43,6 +49,7 @@ export function RowGroup({ groupId, viewMode = false }: Props) {
 
   // Safety check
   if (!group) return null
+  const displaySectionNumber = group.sectionNumber ?? fallbackSectionNumber
 
   // ==== CÁLCULO ROBUSTO: Baseado no DOM real ====
   // Recalcula as boxes sempre que houver mudanças
@@ -213,6 +220,17 @@ export function RowGroup({ groupId, viewMode = false }: Props) {
         </div>
       )}
 
+      {displaySectionNumber !== undefined && (
+        <div
+          className="pointer-events-none absolute top-4 right-2 z-[200]"
+          aria-label={`Seção ${displaySectionNumber}`}
+        >
+          <div className="rounded-full bg-white/90 px-3 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-purple-700 shadow-lg border border-purple-200/70">
+            Seção {displaySectionNumber}
+          </div>
+        </div>
+      )}
+
       {/* Content */}
       <div className="relative" style={{ zIndex: 1 }}>
         <div className="px-1 pt-1 pb-0" data-group-header />
@@ -264,6 +282,21 @@ function GroupRowItem({ groupId, rowId, viewMode = false }: GroupRowItemProps) {
     data: { from: 'groupRow', groupId, rowId },
     disabled: isDraggingH || !!group?.isFinalized || viewMode,
   })
+
+  const sanitizedRowListeners = React.useMemo(() => {
+    if (!listeners) return undefined
+
+    return {
+      ...listeners,
+      onPointerDown: (event: React.PointerEvent<Element>) => {
+        const target = event.target
+        if (target instanceof HTMLElement && target.closest('[data-tracker-id]')) {
+          return
+        }
+        listeners.onPointerDown?.(event)
+      },
+    }
+  }, [listeners])
 
   const style: React.CSSProperties = {
     transform: CSS.Transform.toString(transform),
@@ -384,9 +417,10 @@ function GroupRowItem({ groupId, rowId, viewMode = false }: GroupRowItemProps) {
       ref={setNodeRef}
       style={style}
       {...(isDraggingH || group.isFinalized ? {} : attributes)}
-      {...(isDraggingH || group.isFinalized ? {} : listeners)}
+      {...(isDraggingH || group.isFinalized ? {} : sanitizedRowListeners)}
       onPointerDown={(e) => {
-        if ((e.target as HTMLElement | null)?.closest('[data-tracker-id]')) {
+        const target = e.target
+        if (target instanceof HTMLElement && target.closest('[data-tracker-id]')) {
           return
         }
         if (!group.isFinalized && !viewMode && e.altKey) {
