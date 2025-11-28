@@ -16,24 +16,27 @@ const AppParamsContext = createContext<AppParams>({
   authToken: null,
 })
 
+// Função helper para extrair parâmetros da URL
+const getParamsFromUrl = (search: string): AppParams => {
+  const urlParams = new URLSearchParams(search)
+  return {
+    projectId: urlParams.get('projectId'),
+    companyId: urlParams.get('companyId'),
+    fieldId: urlParams.get('fieldId'),
+    authToken: urlParams.get('authToken'),
+  }
+}
+
 export function AppParamsProvider({ children }: { children: ReactNode }) {
   const location = useLocation()
-  const [params, setParams] = useState<AppParams>({
-    projectId: null,
-    companyId: null,
-    fieldId: null,
-    authToken: null,
-  })
+  
+  // Inicializa os parâmetros diretamente da URL no estado inicial
+  // Isso garante que os parâmetros estejam disponíveis no primeiro render
+  const [params, setParams] = useState<AppParams>(() => getParamsFromUrl(location.search))
 
   useEffect(() => {
     // Captura os parâmetros da URL sempre que a location mudar
-    const urlParams = new URLSearchParams(location.search)
-    const newParams = {
-      projectId: urlParams.get('projectId'),
-      companyId: urlParams.get('companyId'),
-      fieldId: urlParams.get('fieldId'),
-      authToken: urlParams.get('authToken'),
-    }
+    const newParams = getParamsFromUrl(location.search)
     
     // Só atualiza se houver novos parâmetros na URL
     // Isso preserva os valores anteriores se a URL for limpa

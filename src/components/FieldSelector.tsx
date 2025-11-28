@@ -41,7 +41,12 @@ export function FieldSelector() {
     console.error('FieldSelector: hooks do router não estão disponíveis')
     return <div className="w-full bg-white border-b border-[#daeef6] px-4 py-3 text-red-600">Erro: Router não disponível</div>
   }
-  const [selectedFieldId, setSelectedFieldId] = useState<string | null>(appParams.fieldId)
+  
+  // Inicializa selectedFieldId com appParams.fieldId ou com o parâmetro da URL como fallback
+  const urlParams = new URLSearchParams(location.search)
+  const urlFieldId = urlParams.get('fieldId')
+  const initialFieldId = appParams.fieldId !== null ? appParams.fieldId : urlFieldId
+  const [selectedFieldId, setSelectedFieldId] = useState<string | null>(initialFieldId)
   const [fieldName, setFieldName] = useState<string>('')
   const [isEditingName, setIsEditingName] = useState(false)
   const [isSavingName, setIsSavingName] = useState(false)
@@ -64,10 +69,15 @@ export function FieldSelector() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [projectIdNum, companyIdNum, appParams.authToken])
 
-  // Atualizar selectedFieldId quando appParams.fieldId mudar
+  // Atualizar selectedFieldId quando appParams.fieldId ou URL mudar
   useEffect(() => {
-    setSelectedFieldId(appParams.fieldId)
-  }, [appParams.fieldId])
+    const currentUrlParams = new URLSearchParams(location.search)
+    const currentUrlFieldId = currentUrlParams.get('fieldId')
+    const fieldIdToUse = appParams.fieldId !== null ? appParams.fieldId : currentUrlFieldId
+    if (fieldIdToUse !== selectedFieldId) {
+      setSelectedFieldId(fieldIdToUse)
+    }
+  }, [appParams.fieldId, location.search, selectedFieldId])
 
   useEffect(() => {
     const handleExternalEdit = () => {
@@ -98,18 +108,74 @@ export function FieldSelector() {
   }, [selectedFieldId, fields])
 
   // Seleciona automaticamente o campo mais antigo (created_at) na inicialização
+  // Também faz isso quando fieldId=0 mas mode=view está presente (trata como modo view)
   useEffect(() => {
     if (autoSelectedFieldRef.current) return
-    if (selectedFieldId) return
-    if (fields.length === 0) return
-    if (!appParams.projectId || !appParams.companyId) return
+    if (loading) {
+      console.log('[FieldSelector] aguardando carregamento dos campos', { loading })
+      return
+    }
+    
+    // Verifica se já há um fieldId na URL ou no contexto
+    const currentUrlParams = new URLSearchParams(location.search)
+    const urlFieldId = currentUrlParams.get('fieldId')
+    const urlMode = currentUrlParams.get('mode')
+    
+    // Caso 1: fieldId=0 e mode=view - seleciona automaticamente o primeiro campo
+    const isFieldZeroWithViewMode = urlFieldId === '0' && urlMode === 'view'
+    
+    // Caso 2: Não há fieldId na URL nem no contexto, e há campos disponíveis - seleciona o primeiro
+    const hasFieldIdInUrl = urlFieldId !== null
+    const hasFieldIdInContext = appParams.fieldId !== null
+    const shouldAutoSelectDefault = !hasFieldIdInUrl && !hasFieldIdInContext && !selectedFieldId
+    
+    // Se já houver fieldId válido (não 0) na URL ou no contexto, não faz auto-select
+    if ((hasFieldIdInUrl && urlFieldId !== '0') || (hasFieldIdInContext && appParams.fieldId !== '0' && appParams.fieldId !== null) || (selectedFieldId && selectedFieldId !== '0')) {
+      console.log('[FieldSelector] auto-select abortado: já existe fieldId válido', {
+        hasFieldIdInUrl,
+        urlFieldId,
+        hasFieldIdInContext,
+        appFieldId: appParams.fieldId,
+        selectedFieldId,
+      })
+      return
+    }
+    
+    // Só faz auto-select se for um dos casos acima
+    if (!isFieldZeroWithViewMode && !shouldAutoSelectDefault) {
+      console.log('[FieldSelector] auto-select não aplicável', {
+        isFieldZeroWithViewMode,
+        shouldAutoSelectDefault,
+      })
+      return
+    }
+    
+    if (fields.length === 0) {
+      console.log('[FieldSelector] auto-select abortado: sem campos carregados')
+      return
+    }
+    if (!appParams.projectId || !appParams.companyId) {
+      console.log('[FieldSelector] auto-select abortado: faltam IDs', {
+        projectId: appParams.projectId,
+        companyId: appParams.companyId,
+      })
+      return
+    }
 
     const firstField = [...fields].sort((a, b) => getCreatedAtValue(a) - getCreatedAtValue(b))[0]
-    if (!firstField) return
+    if (!firstField) {
+      console.log('[FieldSelector] auto-select abortado: não encontrou primeiro campo após ordenar')
+      return
+    }
 
     autoSelectedFieldRef.current = true
     const firstFieldId = firstField.id.toString()
     setSelectedFieldId(firstFieldId)
+    console.log('[FieldSelector] auto-select aplicado', {
+      firstFieldId,
+      firstFieldName: firstField.name,
+      reason: isFieldZeroWithViewMode ? 'fieldId=0 + mode=view' : 'sem fieldId definido',
+    })
 
     const params = new URLSearchParams()
     params.set('projectId', appParams.projectId)
@@ -119,7 +185,7 @@ export function FieldSelector() {
     if (appParams.authToken) params.set('authToken', appParams.authToken)
 
     navigate(`/view?${params.toString()}`, { replace: true })
-  }, [fields, selectedFieldId, appParams.projectId, appParams.companyId, appParams.authToken, navigate])
+  }, [fields, selectedFieldId, appParams.projectId, appParams.companyId, appParams.fieldId, appParams.authToken, location.search, navigate, loading])
 
 
   const handleFieldChange = (e: React.ChangeEvent<HTMLSelectElement>) => {

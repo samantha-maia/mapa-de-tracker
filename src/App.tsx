@@ -121,34 +121,57 @@ function AutoRedirectToView() {
   const appParams = useAppParams()
 
   useEffect(() => {
-    // Só redireciona se estiver na rota raiz (/) e tiver um fieldId
-    if (location.pathname === '/') {
-      const urlParams = new URLSearchParams(location.search)
-      const mode = urlParams.get('mode')
-      // IMPORTANTE: verifica explicitamente !== null para permitir valores "0"
-      const projectId = urlParams.get('projectId') !== null ? urlParams.get('projectId') : appParams.projectId
-      const companyId = urlParams.get('companyId') !== null ? urlParams.get('companyId') : appParams.companyId
-      const fieldId = urlParams.get('fieldId') !== null ? urlParams.get('fieldId') : appParams.fieldId
-      const authToken = urlParams.get('authToken') !== null ? urlParams.get('authToken') : appParams.authToken
+    const urlParams = new URLSearchParams(location.search)
+    const mode = urlParams.get('mode')
+    const hasModeParam = urlParams.has('mode') // Verifica se mode está presente (mesmo que vazio)
+    // IMPORTANTE: verifica explicitamente !== null para permitir valores "0"
+    const projectId = urlParams.get('projectId') !== null ? urlParams.get('projectId') : appParams.projectId
+    const companyId = urlParams.get('companyId') !== null ? urlParams.get('companyId') : appParams.companyId
+    const fieldId = urlParams.get('fieldId') !== null ? urlParams.get('fieldId') : appParams.fieldId
+    const authToken = urlParams.get('authToken') !== null ? urlParams.get('authToken') : appParams.authToken
 
-      // Se não tiver fieldId, não faz nada (deixa o usuário escolher)
-      if (!fieldId) {
-        return
+    // Se não tiver fieldId, não faz nada (deixa o usuário escolher)
+    if (!fieldId) {
+      return
+    }
+
+    const fieldIdNum = parseInt(fieldId, 10)
+    
+    // Se fieldId=0 e mode está presente (mesmo que vazio), deixa o FieldSelector tratar (ele vai selecionar o primeiro campo)
+    if (fieldIdNum === 0 && hasModeParam) {
+      return
+    }
+    
+    if (isNaN(fieldIdNum) || fieldIdNum === 0) {
+      return
+    }
+
+    // Se mode=view está presente na URL, sempre redireciona para /view
+    if (mode === 'view') {
+      if (location.pathname !== '/view') {
+        // Preserva os parâmetros na URL ao redirecionar
+        const params = new URLSearchParams()
+        if (projectId) params.set('projectId', projectId)
+        if (companyId) params.set('companyId', companyId)
+        if (fieldId) params.set('fieldId', fieldId)
+        if (authToken) params.set('authToken', authToken)
+        params.set('mode', 'view')
+        navigate(`/view?${params.toString()}`, { replace: true })
       }
+      return
+    }
 
-      // Se tiver todos os parâmetros e fieldId válido (≠ 0), e não tiver mode=edit ou mode=create, redireciona para /view
+    // Se estiver na rota raiz (/) e tiver todos os parâmetros, e não tiver mode=edit ou mode=create, redireciona para /view
+    if (location.pathname === '/') {
       if (projectId && companyId && fieldId && authToken && mode !== 'edit' && mode !== 'create') {
-        const fieldIdNum = parseInt(fieldId, 10)
-        if (!isNaN(fieldIdNum) && fieldIdNum !== 0) {
-          // Preserva os parâmetros na URL ao redirecionar e adiciona mode=view
-          const params = new URLSearchParams()
-          params.set('projectId', projectId)
-          params.set('companyId', companyId)
-          params.set('fieldId', fieldId)
-          params.set('authToken', authToken)
-          params.set('mode', 'view')
-          navigate(`/view?${params.toString()}`, { replace: true })
-        }
+        // Preserva os parâmetros na URL ao redirecionar e adiciona mode=view
+        const params = new URLSearchParams()
+        params.set('projectId', projectId)
+        params.set('companyId', companyId)
+        params.set('fieldId', fieldId)
+        params.set('authToken', authToken)
+        params.set('mode', 'view')
+        navigate(`/view?${params.toString()}`, { replace: true })
       }
     }
   }, [location.pathname, location.search, appParams, navigate])
@@ -182,11 +205,28 @@ function AppContent() {
   const fieldIdToUse = appParams.fieldId !== null ? appParams.fieldId : urlFieldId
   const mode = urlParams.get('mode')
   
-  // Verifica se fieldId = "0" mas não está no modo create
-  const isFieldZeroWithoutCreate = fieldIdToUse === '0' && mode !== 'create'
+  // Verifica se mode está presente na URL (mesmo que vazio) - indica que veio do FlutterFlow
+  const hasModeParam = urlParams.has('mode')
   
-  // Só mostra Header e conteúdo se houver um fieldId selecionado E não for fieldId=0 sem mode=create
-  const hasFieldSelected = fieldIdToUse !== null && !isFieldZeroWithoutCreate
+  // Verifica se fieldId = "0" mas não está no modo create
+  // Se fieldId=0 e mode=view, não mostra conteúdo até que um campo seja selecionado automaticamente
+  const isFieldZeroWithoutCreate = fieldIdToUse === '0' && mode !== 'create' && !hasModeParam
+  
+  // Só mostra Header e conteúdo se houver um fieldId selecionado E não for fieldId=0 (exceto se for modo create)
+  // Se fieldId=0 e mode=view, aguarda o FieldSelector selecionar automaticamente um campo
+  const hasFieldSelected = fieldIdToUse !== null && fieldIdToUse !== '0' && !isFieldZeroWithoutCreate
+
+  useEffect(() => {
+    console.log('[AppContent] estado da seleção', {
+      urlFieldId,
+      appFieldId: appParams.fieldId,
+      fieldIdToUse,
+      mode,
+      hasModeParam,
+      isFieldZeroWithoutCreate,
+      hasFieldSelected,
+    })
+  }, [urlFieldId, appParams.fieldId, fieldIdToUse, mode, hasModeParam, isFieldZeroWithoutCreate, hasFieldSelected])
 
   return (
     <div className="flex h-screen flex-col">
