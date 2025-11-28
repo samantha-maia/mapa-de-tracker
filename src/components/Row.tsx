@@ -4,6 +4,7 @@ import { CSS } from '@dnd-kit/utilities'
 import { useLayoutStore } from '../store/layoutStore'
 import { useState, useCallback, useEffect } from 'react'
 import { getStatusColor } from '../utils/statusColors'
+import { X } from 'lucide-react'
 
 type RowItemProps = { id: string; rowId: string; viewMode?: boolean }
 type RowItemRemoveButtonProps = { id: string }
@@ -355,7 +356,7 @@ export function Row({ rowId, inGroup = false, viewMode = false }: Props) {
                gap: '8px'
              }}>
                {row.trackerIds.map((id) => (
-                 <div key={id} className="relative flex-shrink-0" style={{ height: 'fit-content' }}>
+                 <div key={id} className="relative flex-shrink-0 group" style={{ height: 'fit-content' }}>
                    <RowItem id={id} rowId={rowId} viewMode={viewMode} />
                    {!viewMode && <RowItemRemoveButton id={id} />}
                  </div>
@@ -382,7 +383,7 @@ function RowItemRemoveButton({ id }: RowItemRemoveButtonProps) {
 
   return (
     <button
-      className="h-5 w-5 rounded-full bg-red-600 text-[10px] font-bold text-white hover:bg-red-700"
+      className="flex items-center justify-center h-4 w-4 rounded-full bg-red-500/90 hover:bg-red-600 text-white opacity-0 group-hover:opacity-100 transition-opacity duration-150 shadow-sm"
       onClick={(e) => {
         e.preventDefault()
         e.stopPropagation()
@@ -390,8 +391,11 @@ function RowItemRemoveButton({ id }: RowItemRemoveButtonProps) {
       }}
       onMouseDown={(e) => e.stopPropagation()}
       style={style}
-      aria-label="Remover"
-    >×</button>
+      aria-label="Remover tracker"
+      title="Remover tracker"
+    >
+      <X size={10} strokeWidth={2.5} />
+    </button>
   )
 }
 

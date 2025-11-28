@@ -2,6 +2,7 @@ import { useDraggable } from '@dnd-kit/core'
 import type { Tracker as TrackerModel } from '../store/layoutStore'
 import { useLayoutStore } from '../store/layoutStore'
 import { getStatusColor } from '../utils/statusColors'
+import { X } from 'lucide-react'
 
 type Props = {
   tracker: TrackerModel
@@ -23,7 +24,7 @@ export function Tracker({ tracker, selected, viewMode = false }: Props) {
   const dynamicH = stakeCount > 0 ? headerH + stakeCount * (stakeSize + stakeGap) : 80
   
   return (
-    <div className="relative">
+    <div className="relative group">
       <div
         ref={viewMode ? undefined : setNodeRef}
         {...(viewMode ? {} : attributes)}
@@ -57,10 +58,17 @@ export function Tracker({ tracker, selected, viewMode = false }: Props) {
       </div>
       {!viewMode && (
         <button
-          className="absolute -right-2 -top-2 h-5 w-5 rounded-full bg-red-600 text-[10px] font-bold text-white"
-          onClick={() => removeTracker(tracker.id)}
-          aria-label="Remover"
-        >×</button>
+          className="absolute -right-1.5 -top-1.5 flex items-center justify-center h-4 w-4 rounded-full bg-red-500/90 hover:bg-red-600 text-white opacity-0 group-hover:opacity-100 transition-opacity duration-150 shadow-sm z-10"
+          onClick={(e) => {
+            e.stopPropagation()
+            removeTracker(tracker.id)
+          }}
+          onMouseDown={(e) => e.stopPropagation()}
+          aria-label="Remover tracker"
+          title="Remover tracker"
+        >
+          <X size={10} strokeWidth={2.5} />
+        </button>
       )}
     </div>
   )
