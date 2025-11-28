@@ -89,7 +89,8 @@ export function RowGroup({ groupId, viewMode = false }: Props) {
 
     const observer = new MutationObserver(() => {
       if (timeoutId) clearTimeout(timeoutId)
-      timeoutId = setTimeout(updateBoxes, 50)
+      // Reduzir delay para atualização mais rápida quando rows são movidas
+      timeoutId = setTimeout(updateBoxes, 10)
     })
 
     observer.observe(root, {
@@ -98,11 +99,33 @@ export function RowGroup({ groupId, viewMode = false }: Props) {
       attributes: true,
       attributeFilter: ['style']
     })
+    
+    // Também observar mudanças nos offsets das rows diretamente
+    const rowsInGroup = rowIdsInGroup
+      .map((id) => useLayoutStore.getState().rows.find((r) => r.id === id))
+      .filter(Boolean)
+    
+    // Forçar atualização imediata quando offsets mudarem
+    const unsubscribe = useLayoutStore.subscribe(
+      (state) => {
+        const currentRows = rowIdsInGroup
+          .map((id) => state.rows.find((r) => r.id === id))
+          .filter(Boolean)
+        const offsetsChanged = currentRows.some((row, idx) => {
+          const oldRow = rowsInGroup[idx]
+          return oldRow && (row?.groupOffsetX ?? 0) !== (oldRow?.groupOffsetX ?? 0)
+        })
+        if (offsetsChanged) {
+          updateBoxes()
+        }
+      }
+    )
 
     return () => {
       observer.disconnect()
       if (rafId !== null) cancelAnimationFrame(rafId)
       if (timeoutId !== null) clearTimeout(timeoutId)
+      unsubscribe()
       isUpdatingRef.current = false
     }
   }, [rowIdsInGroup.length])
@@ -140,13 +163,22 @@ export function RowGroup({ groupId, viewMode = false }: Props) {
       })
       const rightmostEdge = Math.max(...rightmostEdges)
 
+      // Calcular largura: da borda esquerda mais à esquerda até a borda direita mais à direita
+      // O problema: quando movemos uma row para a esquerda (offset negativo), o minOffset fica mais negativo,
+      // mas o rightmostEdge não muda se a row mais à direita não mudou, então a largura aumenta incorretamente.
+      // Solução: usar as dimensões do DOM (rowBoxes) quando disponível, que são mais precisas e já consideram
+      // os offsets corretamente, incluindo offsets negativos.
       const calculatedWidth = Math.max(120, rightmostEdge - minOffset)
       const domDimensions = calculateGroupDimensions(rowBoxes)
 
-      // Usar apenas calculatedWidth para evitar espaço extra do DOM
-      // O calculatedWidth é calculado teoricamente e é mais preciso
+      // Usar domDimensions.width quando disponível, pois é baseado no DOM real e mais preciso
+      // especialmente quando há offsets negativos. O cálculo do DOM já considera as posições reais
+      // das rows, incluindo offsets negativos, então é mais confiável.
+      // Se rowBoxes estiver vazio, usar calculatedWidth como fallback.
+      const finalWidth = rowBoxes.length > 0 ? domDimensions.width : calculatedWidth
+      
       return {
-        width: calculatedWidth,
+        width: finalWidth,
         height: domDimensions.height + 8,
       }
     }

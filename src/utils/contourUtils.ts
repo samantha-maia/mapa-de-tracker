@@ -139,10 +139,20 @@ export function calculateGroupDimensions(rowBoxes: RowBox[]): { width: number; h
   const offsetY = minTop < 0 ? Math.abs(minTop) : 0
   
   // Calcular a largura e altura reais necessárias
-  // Considera desde o mínimo até o máximo (incluindo margens já calculadas nas boxes)
-  // Não adiciona offsetX à largura para evitar espaço extra à esquerda
-  // O offsetX é apenas para ajustar o viewBox do SVG se necessário
-  const width = Math.ceil(maxRight - minLeft) // Largura real sem adicionar offset extra
+  // PROBLEMA: Quando minLeft é negativo (row vai para a esquerda), o cálculo maxRight - minLeft
+  // aumenta a largura incorretamente porque inclui o espaço negativo à esquerda.
+  // SOLUÇÃO: Se minLeft é negativo, a largura deve ser baseada apenas no conteúdo visível
+  // dentro do grupo (da origem 0 até maxRight), não no espaço negativo à esquerda.
+  // Se minLeft >= 0, calculamos normalmente: maxRight - minLeft
+  let width: number
+  if (minLeft < 0) {
+    // Row(s) foram para a esquerda. A largura deve ser apenas do conteúdo visível (maxRight),
+    // não incluindo o espaço negativo à esquerda. O grupo não deve expandir à direita.
+    width = Math.ceil(Math.max(0, maxRight))
+  } else {
+    // Todas as rows estão à direita ou na origem. Cálculo normal.
+    width = Math.ceil(maxRight - minLeft)
+  }
   const height = Math.ceil(maxBottom - minTop) + offsetY // Altura com offset se necessário
   
   return { 
