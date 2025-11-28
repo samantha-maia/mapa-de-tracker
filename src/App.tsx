@@ -208,13 +208,14 @@ function AppContent() {
   // Verifica se mode está presente na URL (mesmo que vazio) - indica que veio do FlutterFlow
   const hasModeParam = urlParams.has('mode')
   
-  // Verifica se fieldId = "0" mas não está no modo create
-  // Se fieldId=0 e mode=view, não mostra conteúdo até que um campo seja selecionado automaticamente
-  const isFieldZeroWithoutCreate = fieldIdToUse === '0' && mode !== 'create' && !hasModeParam
+  const isCreateMode = fieldIdToUse === '0' && mode === 'create'
+  const isViewWaitingSelection = fieldIdToUse === '0' && mode === 'view'
+  const isFieldZeroWithoutCreate = fieldIdToUse === '0' && !isCreateMode && !isViewWaitingSelection && !hasModeParam
   
-  // Só mostra Header e conteúdo se houver um fieldId selecionado E não for fieldId=0 (exceto se for modo create)
-  // Se fieldId=0 e mode=view, aguarda o FieldSelector selecionar automaticamente um campo
-  const hasFieldSelected = fieldIdToUse !== null && fieldIdToUse !== '0' && !isFieldZeroWithoutCreate
+  // Mostra o conteúdo quando há fieldId válido ou quando estiver no modo create explícito (fieldId=0 + mode=create)
+  const hasFieldSelected =
+    fieldIdToUse !== null &&
+    (fieldIdToUse !== '0' || isCreateMode)
 
   useEffect(() => {
     console.log('[AppContent] estado da seleção', {
@@ -223,6 +224,8 @@ function AppContent() {
       fieldIdToUse,
       mode,
       hasModeParam,
+      isCreateMode,
+      isViewWaitingSelection,
       isFieldZeroWithoutCreate,
       hasFieldSelected,
     })
