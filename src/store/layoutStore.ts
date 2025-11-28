@@ -667,17 +667,17 @@ export const useLayoutStore = create<SectionState & LayoutActions>()(
           return ax - bx
         })
 
-        // Compute left normalization to preserve relative horizontal positions
-        // Use the actual row X positions (which already account for padding when created)
+        // Compute left/top normalization to preserve relative positions
         const minX = Math.min(...rowsInOrder.map(r => r.x ?? 0))
+        const minY = Math.min(...rowsInOrder.map(r => r.y ?? 0))
 
         const nextSectionNumber = getNextSectionNumber(s.rowGroups)
         s.rowGroups.push({ 
           id: newGroupId, 
           databaseId: null,
           rowIds: rowsInOrder.map((r) => r.id), 
-          x: 40, 
-          y: 40, 
+          x: minX, 
+          y: minY, 
           name: `Grupo ${s.rowGroups.length + 1}`,
           isFinalized: false,
           contourPath: '',
