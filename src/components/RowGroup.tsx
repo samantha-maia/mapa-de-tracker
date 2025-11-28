@@ -262,9 +262,11 @@ type GroupRowItemProps = { groupId: string; rowId: string; viewMode?: boolean }
 function GroupRowItem({ groupId, rowId, viewMode = false }: GroupRowItemProps) {
   const row = useLayoutStore((s) => s.rows.find((r) => r.id === rowId)!)
   const group = useLayoutStore((s) => s.rowGroups.find((g) => g.id === groupId)!)
+  const selectedIds = useLayoutStore((s) => s.selectedIds)
   const offsetX = row?.groupOffsetX ?? 0
   const setOffsetX = useLayoutStore((s) => s.setRowGroupOffsetX)
   const removeRowFromGroup = useLayoutStore((s) => s.removeRowFromGroup)
+  const isSelected = selectedIds.includes(rowId)
 
   const [isDraggingH, setIsDraggingH] = React.useState(false)
   const dragSessionRef = React.useRef<{
@@ -428,7 +430,8 @@ function GroupRowItem({ groupId, rowId, viewMode = false }: GroupRowItemProps) {
         }
       }}
       data-row-id={rowId}
-      className="relative group/row"
+      data-selecto-uid={rowId}
+      className={`relative group/row ${isSelected ? 'ring-2 ring-blue-500 ring-opacity-50' : ''}`}
     >
       {/* Barra de drag horizontal - só aparece quando não está finalizado e não está em viewMode */}
       {!group.isFinalized && !viewMode && (

@@ -786,6 +786,71 @@ export const useLayoutStore = create<SectionState & LayoutActions>()(
           }
         }
 
+        // Duplicate rows that are inside groups (keep them in the same group)
+        const selectedRowsInGroups = state.selectedIds.filter((id) => 
+          state.rows.some((r) => r.id === id && r.groupId)
+        )
+        for (const rowId of selectedRowsInGroups) {
+          const row = s.rows.find((r) => r.id === rowId)
+          if (row && row.groupId) {
+            const group = s.rowGroups.find((g) => g.id === row.groupId)
+            if (group) {
+              const newRowId = nextId('row')
+              const newTrackerIds: string[] = []
+              
+              // Duplicate trackers in the row
+              for (const trackerId of row.trackerIds) {
+                const tracker = state.trackersById[trackerId]
+                if (tracker) {
+                  const newTrackerId = nextId('t')
+                  const originalTitle = tracker.title || 'Tracker'
+                  const baseTitle = originalTitle.replace(/\(\s*c[oó]pia\s*\)$/i, '').trim()
+                  const suffixMatch = originalTitle.match(/_(\d+)$/)
+                  let newTitle: string
+                  if (suffixMatch) {
+                    const num = parseInt(suffixMatch[1], 10)
+                    newTitle = `${baseTitle}_${num + 1}`
+                  } else {
+                    newTitle = `${baseTitle}_1`
+                  }
+
+                  const newTracker: Tracker = {
+                    id: newTrackerId,
+                    databaseId: null,
+                    type: tracker.type,
+                    title: newTitle,
+                    rowY: tracker.rowY,
+                    ext: tracker.ext ? { ...tracker.ext } : undefined
+                  }
+                  s.trackersById[newTrackerId] = newTracker
+                  newTrackerIds.push(newTrackerId)
+                }
+              }
+              
+              // Create new row with same groupId and groupOffsetX
+              const newRow: Row = {
+                id: newRowId,
+                databaseId: null,
+                trackerIds: newTrackerIds,
+                x: row.x ?? 0, // Keep same x position (group handles positioning)
+                y: row.y ?? 0, // Keep same y position
+                groupId: row.groupId, // Keep in the same group
+                groupOffsetX: row.groupOffsetX ?? 0, // Keep same offset
+                isFinalized: false,
+                contourPath: ''
+              }
+              s.rows.push(newRow)
+              
+              // Add the new row to the group's rowIds
+              if (!group.rowIds.includes(newRowId)) {
+                group.rowIds.push(newRowId)
+              }
+              
+              newIds.push(newRowId)
+            }
+          }
+        }
+
         // Duplicate row groups
         const selectedGroups = state.selectedIds.filter((id) => 
           state.rowGroups.some((g) => g.id === id)
