@@ -386,6 +386,9 @@ function GroupRowItem({ groupId, rowId, viewMode = false }: GroupRowItemProps) {
       {...(isDraggingH || group.isFinalized ? {} : attributes)}
       {...(isDraggingH || group.isFinalized ? {} : listeners)}
       onPointerDown={(e) => {
+        if ((e.target as HTMLElement | null)?.closest('[data-tracker-id]')) {
+          return
+        }
         if (!group.isFinalized && !viewMode && e.altKey) {
           startHorizontalDrag(e)
         }

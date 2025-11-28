@@ -733,11 +733,22 @@ export const useLayoutStore = create<SectionState & LayoutActions>()(
               const tracker = state.trackersById[trackerId]
               if (tracker) {
                 const newTrackerId = nextId('t')
-                const newTracker: Tracker = {
+              const originalTitle = tracker.title || 'Tracker'
+              const baseTitle = originalTitle.replace(/\(\s*c[oó]pia\s*\)$/i, '').trim()
+              const suffixMatch = originalTitle.match(/_(\d+)$/)
+              let newTitle: string
+              if (suffixMatch) {
+                const num = parseInt(suffixMatch[1], 10)
+                newTitle = `${baseTitle}_${num + 1}`
+              } else {
+                newTitle = `${baseTitle}_1`
+              }
+
+              const newTracker: Tracker = {
                   id: newTrackerId,
                   databaseId: null,
                   type: tracker.type,
-                  title: `${tracker.title} (cópia)`,
+                title: newTitle,
                   rowY: tracker.rowY,
                   ext: tracker.ext ? { ...tracker.ext } : undefined
                 }
@@ -810,6 +821,12 @@ export const useLayoutStore = create<SectionState & LayoutActions>()(
               }
             }
             
+            const baseGroupName = group.name?.replace(/\(\s*c[oó]pia\s*\)$/i, '').trim() || `Grupo ${groupId}`
+            const groupSuffixMatch = group.name?.match(/_(\d+)$/)
+            const newGroupName = groupSuffixMatch
+              ? `${baseGroupName}_${parseInt(groupSuffixMatch[1], 10) + 1}`
+              : `${baseGroupName}_1`
+
             const newGroup: RowGroup = {
               id: newGroupId,
               databaseId: null,
@@ -818,7 +835,7 @@ export const useLayoutStore = create<SectionState & LayoutActions>()(
               y: (group.y ?? 0) + offset,
               isFinalized: false,
               contourPath: '',
-              name: `${group.name || `Grupo ${groupId}`} (cópia)`
+              name: newGroupName
             }
             s.rowGroups.push(newGroup)
             newIds.push(newGroupId)
@@ -2033,23 +2050,10 @@ export const useLayoutStore = create<SectionState & LayoutActions>()(
 
     setRowGroupOffsetX: (rowId, offsetX) => {
       set((s) => {
-        const row = s.rows.find(r => r.id === rowId)
+        const row = s.rows.find((r) => r.id === rowId)
         if (!row) return
 
         row.groupOffsetX = Math.round(offsetX)
-
-        if (!row.groupId) return
-
-        const relatedRows = s.rows.filter(r => r.groupId === row.groupId)
-        if (!relatedRows.length) return
-
-        const minOffset = Math.min(...relatedRows.map(r => r.groupOffsetX ?? 0))
-
-        if (minOffset !== 0) {
-          for (const r of relatedRows) {
-            r.groupOffsetX = Math.round((r.groupOffsetX ?? 0) - minOffset)
-          }
-        }
       })
     },
 

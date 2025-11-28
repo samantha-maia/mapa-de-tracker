@@ -17,6 +17,7 @@ import { useLayoutStore } from '../store/layoutStore'
 import type { TrackerType } from '../store/layoutStore'
 import type { ExternalTracker } from '../data/trackersCatalog'
 import { useLayoutStore as useStore } from '../store/layoutStore'
+import { useFieldsStore } from '../store/fieldsStore'
 import { ROW_GRID_X, ROW_GRID_Y, TRACKER_GRID, GRID } from '../utils/gridConstants'
 import { useAppParams } from '../context/AppParamsContext'
 import { useNavigate } from 'react-router-dom'
@@ -92,6 +93,38 @@ export function Canvas() {
   const [errorMessage, setErrorMessage] = useState('')
   const [fieldNameInput, setFieldNameInput] = useState('')
   const appParams = useAppParams()
+  const fetchFieldsStore = useFieldsStore((s) => s.fetchFields)
+  const lastLoadedParamsRef = useRef<string>('')
+
+  const refreshScreenData = useCallback(async (overrideFieldId?: number | null) => {
+    const projectIdNum = appParams.projectId ? parseInt(appParams.projectId, 10) : null
+    const companyIdNum = appParams.companyId ? parseInt(appParams.companyId, 10) : null
+    const contextFieldId = appParams.fieldId ? parseInt(appParams.fieldId, 10) : null
+    const targetFieldId = overrideFieldId ?? contextFieldId
+    const validProjectId = projectIdNum !== null && !Number.isNaN(projectIdNum) ? projectIdNum : null
+    const validCompanyId = companyIdNum !== null && !Number.isNaN(companyIdNum) ? companyIdNum : null
+    const validFieldId = targetFieldId !== null && !Number.isNaN(targetFieldId) && targetFieldId !== 0 ? targetFieldId : null
+    let reloadedLayout = false
+
+    try {
+      if (validProjectId !== null && validCompanyId !== null) {
+        await fetchFieldsStore(validProjectId, validCompanyId, appParams.authToken)
+      }
+
+      if (validProjectId !== null && validFieldId !== null) {
+        reloadedLayout = true
+        setIsLoading(true)
+        await loadFromApi(validProjectId, validFieldId, appParams.authToken)
+        lastLoadedParamsRef.current = `${validProjectId}-${validFieldId}`
+      }
+    } catch (error) {
+      console.error('Erro ao atualizar dados após salvar:', error)
+    } finally {
+      if (reloadedLayout) {
+        setIsLoading(false)
+      }
+    }
+  }, [appParams.projectId, appParams.companyId, appParams.fieldId, appParams.authToken, fetchFieldsStore, loadFromApi])
   
   const handleSaveWithName = async () => {
     if (!fieldNameInput.trim()) {
@@ -134,6 +167,7 @@ export function Canvas() {
           if (appParams.authToken) params.set('authToken', appParams.authToken)
           navigate(`/?${params.toString()}`, { replace: true })
         }
+        await refreshScreenData(result.fieldId ?? null)
         setShowSuccessModal(true)
         // Fechar o modal e limpar
         setFieldNameInput('')
@@ -185,7 +219,6 @@ export function Canvas() {
   // Auto-load map from API when URL parameters are present
   // Se fieldId != 0 → modo edição (carrega dados)
   // Se fieldId == 0 → modo criação (tela vazia)
-  const lastLoadedParamsRef = useRef<string>('')
   useEffect(() => {
     if (appParams.projectId && appParams.fieldId) {
       const projectIdNum = parseInt(appParams.projectId, 10)
@@ -922,6 +955,7 @@ export function Canvas() {
                   const result = await saveToApi(projectId, fieldId, appParams.authToken, null)
                   setIsSaving(false)
                   if (result.success) {
+                    await refreshScreenData(fieldId)
                     setShowSuccessModal(true)
                   } else {
                     // Se o erro for sobre falta de seção, mostrar modal personalizado
