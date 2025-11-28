@@ -5,6 +5,7 @@ import { useTrackersStore } from './trackersStore'
 import { calculateRowHeight, calculateTrackerHeight } from '../utils/rowHeightUtils'
 import { GRID } from '../utils/gridConstants'
 import { apiRequest, API_ROUTES } from '../services/apiClient'
+import { getRowsTrackersStatusesId } from '../utils/trackerStatusColor'
 
 //precisa adicionar o fields_id que vai vir no get da pagina
 
@@ -2094,12 +2095,15 @@ export const useLayoutStore = create<SectionState & LayoutActions>()(
                 })
               }
               
+              // Calcula o rows_trackers_statuses_id baseado nos status das estacas
+              const rowsTrackersStatusesId = getRowsTrackersStatusesId(tracker.stakeStatusIds)
+              
               return {
                 id: trackerDbId,
                 position: String(trackerIndex + 1),
                 rows_id: rowDbId,
                 trackers_id: tracker.ext?.id || null,
-                rows_trackers_statuses_id: 1, // Default status
+                rows_trackers_statuses_id: rowsTrackersStatusesId,
                 rowY: tracker.rowY ?? 0,
                 list_trackers_stakes: list_trackers_stakes
               }

@@ -2,6 +2,7 @@ import { useDraggable } from '@dnd-kit/core'
 import type { Tracker as TrackerModel } from '../store/layoutStore'
 import { useLayoutStore } from '../store/layoutStore'
 import { getStatusColor } from '../utils/statusColors'
+import { getTrackerStatusColor } from '../utils/trackerStatusColor'
 import { X } from 'lucide-react'
 
 type Props = {
@@ -21,7 +22,8 @@ export function Tracker({ tracker, selected, viewMode = false }: Props) {
   const stakeGap = 2
   const headerH = 10
   const stakeCount = tracker.ext?.stake_quantity ?? 0
-  const dynamicH = stakeCount > 0 ? headerH + stakeCount * (stakeSize + stakeGap) : 80
+  const dynamicH = stakeCount > 0 ? headerH + 5 + stakeCount * (stakeSize + stakeGap) : 80
+  const trackerStatusColor = getTrackerStatusColor(tracker.stakeStatusIds)
   
   return (
     <div className="relative group">
@@ -29,10 +31,16 @@ export function Tracker({ tracker, selected, viewMode = false }: Props) {
         ref={viewMode ? undefined : setNodeRef}
         {...(viewMode ? {} : attributes)}
         {...(viewMode ? {} : listeners)}
-        className={`pointer-events-auto select-none rounded border bg-white p-2 text-xs shadow-sm ${
+        className={`pointer-events-auto select-none rounded bg-white p-2  text-xs shadow-sm ${
           selected ? 'ring-2 ring-blue-500' : ''
         } ${isDragging ? 'opacity-50' : ''}`}
-        style={{ width: 30, height: dynamicH }}
+        style={{ 
+          width: 30, 
+          height: dynamicH,
+          borderColor: trackerStatusColor.color,
+          borderWidth: '1px',
+          borderStyle: 'solid',
+        }}
       >
         {tracker.ext ? (
           <div className="flex flex-col items-center" style={{ gap: stakeGap }}>
@@ -47,7 +55,7 @@ export function Tracker({ tracker, selected, viewMode = false }: Props) {
                     height: stakeSize, 
                     backgroundColor: color,
                     opacity: 1, // Força opacidade total
-                    border: viewMode ? '1px solid rgba(0, 0, 0, 0.15)' : 'none'
+                    border: viewMode ? '1px solid rgba(255, 255, 255, 1)' : 'none'
                   }} 
                   className="rounded-sm"
                 />

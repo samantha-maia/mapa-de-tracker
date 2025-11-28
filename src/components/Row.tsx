@@ -4,6 +4,7 @@ import { CSS } from '@dnd-kit/utilities'
 import { useLayoutStore } from '../store/layoutStore'
 import { useState, useCallback, useEffect } from 'react'
 import { getStatusColor } from '../utils/statusColors'
+import { getTrackerStatusColor } from '../utils/trackerStatusColor'
 import { X } from 'lucide-react'
 
 type RowItemProps = { id: string; rowId: string; viewMode?: boolean }
@@ -30,8 +31,9 @@ function RowItem({ id, rowId, viewMode = false }: RowItemProps) {
   const stakeGap = 2
   const headerH = 10
   const stakeCount = tracker?.ext?.stake_quantity ?? 0
-  const dynamicH = stakeCount > 0 ? headerH + stakeCount * (stakeSize + stakeGap) : 80
+  const dynamicH = stakeCount > 0 ? headerH + 5 + stakeCount * (stakeSize + stakeGap) : 80
   const rowY = tracker?.rowY ?? 0
+  const trackerStatusColor = getTrackerStatusColor(tracker?.stakeStatusIds)
 
   // Calculate max vertical displacement. Allow slight negative overlap into the row above.
   const maxDisplacement = useCallback(() => {
@@ -40,7 +42,7 @@ function RowItem({ id, rowId, viewMode = false }: RowItemProps) {
     
     const heights = trackers.map(t => {
       const stakeCount = t?.ext?.stake_quantity ?? 0
-      return stakeCount > 0 ? headerH + stakeCount * (stakeSize + stakeGap) : 80
+      return stakeCount > 0 ? headerH + 5 + stakeCount * (stakeSize + stakeGap) : 80
     })
     
     const maxHeight = Math.max(...heights)
@@ -168,11 +170,16 @@ function RowItem({ id, rowId, viewMode = false }: RowItemProps) {
   return (
     <div 
       ref={setNodeRef} 
-      style={style} 
+      style={{
+        ...style,
+        borderColor: trackerStatusColor.color,
+        borderWidth: '1.5px',
+        borderStyle: 'solid'
+      }} 
       data-tracker-id={id}
       {...(isDraggingVertical || viewMode ? {} : attributes)} 
       {...(isDraggingVertical || viewMode ? {} : listeners)} 
-      className={`rounded border bg-white p-2 text-xs shadow-sm ${
+      className={`rounded bg-white p-2 text-xs shadow-sm ${
         isDraggingVertical ? 'cursor-ns-resize' : 'cursor-move'
       } relative group ${isDragging ? 'ring-2 ring-blue-300' : ''}`}
       onMouseDown={handleMouseDown}
@@ -349,7 +356,7 @@ export function Row({ rowId, inGroup = false, viewMode = false }: Props) {
            <SortableContext items={row.trackerIds} strategy={horizontalListSortingStrategy}>
              <div className={`flex flex-row items-start ${inGroup ? 'px-1 py-1' : 'px-2 py-2'}`} style={{ 
                height: 'fit-content',
-               minHeight: 'fit-content',
+               minHeight: '50px',
                position: 'relative',
                width: inGroup ? 'fit-content' : undefined,
                display: 'flex',
