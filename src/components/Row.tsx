@@ -266,10 +266,12 @@ export function Row({ rowId, inGroup = false, viewMode = false }: Props) {
       className="relative"
       style={{ 
         height: 'fit-content',
-        minHeight: '120px',
+        minHeight: '50px',
         width: inGroup ? 'fit-content' : undefined, // Quando dentro do grupo, largura baseada no conteúdo
         maxWidth: inGroup ? 'fit-content' : undefined,
-        display: 'block' // Garante que o container seja um bloco
+        display: 'block', // Garante que o container seja um bloco
+        position: 'relative',
+        zIndex: inGroup ? 1 : 'auto' // Garante que o droppable seja detectado mesmo dentro do grupo
       }}
       data-row-id={rowId}
     >
@@ -300,7 +302,7 @@ export function Row({ rowId, inGroup = false, viewMode = false }: Props) {
       )}
       
       {/* Content */}
-      <div className="relative" style={{ zIndex: 1 }}>
+      <div className="relative" style={{ zIndex: inGroup ? 2 : 1 }}>
         <div 
           ref={inGroup || viewMode ? undefined : setRowDraggableRef} 
           className={`flex cursor-move select-none items-center justify-between ${
