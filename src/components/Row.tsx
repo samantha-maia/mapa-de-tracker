@@ -229,6 +229,7 @@ function RowItem({ id, rowId, viewMode = false }: RowItemProps) {
           {Array.from({ length: stakeCount }).map((_, i) => {
             const statusId = tracker.stakeStatusIds?.[i]
             const color = getStatusColor(statusId)
+            const position = String.fromCharCode(65 + i) // A, B, C, D...
             return (
               <div 
                 key={i} 
@@ -237,10 +238,25 @@ function RowItem({ id, rowId, viewMode = false }: RowItemProps) {
                   height: stakeSize, 
                   backgroundColor: color,
                   opacity: 1, // Força opacidade total
-                  border: viewMode ? '1px solid rgba(0, 0, 0, 0.15)' : 'none'
+                  border: viewMode ? '1px solid rgba(0, 0, 0, 0.15)' : 'none',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center'
                 }} 
                 className="rounded-sm"
-              />
+              >
+                <span 
+                  style={{ 
+                    fontSize: '10px', 
+                    fontWeight: 600,
+                    color: 'rgba(255, 255, 255, 0.9)',
+                    textShadow: '0 1px 2px rgba(0, 0, 0, 0.3)',
+                    userSelect: 'none'
+                  }}
+                >
+                  {position}
+                </span>
+              </div>
             )
           })}
         </div>
