@@ -13,6 +13,7 @@ import { RowGroup } from './RowGroup'
 import { Tracker } from './Tracker'
 import { TextElement } from './TextElement'
 import { TextEditorPanel } from './TextEditorPanel'
+import { StatusLegend } from './StatusLegend'
 import { useLayoutStore } from '../store/layoutStore'
 import type { TrackerType } from '../store/layoutStore'
 import type { ExternalTracker } from '../data/trackersCatalog'
@@ -707,7 +708,7 @@ export function Canvas() {
   return (
     <DndContext sensors={sensors} collisionDetection={pointerWithin} onDragStart={handleDragStart} onDragMove={handleDragMove} onDragOver={handleDragOver} onDragEnd={handleDragEnd}>
       <div className="flex h-full min-h-0 gap-4 p-4">
-        <div className="w-64 shrink-0 overflow-y-auto">
+        <div className="w-56 shrink-0 overflow-y-auto">
           {/* Trackers Section */}
           <div className="mb-6">
             <Palette />
@@ -927,6 +928,9 @@ export function Canvas() {
                 </div>
               </div>
             </div>
+            
+            {/* Status Legend */}
+            <StatusLegend />
             
             {/* File Actions */}
             <div className="rounded-lg border border-[#daeef6] border-solid-1 bg-white p-3 space-y-2">

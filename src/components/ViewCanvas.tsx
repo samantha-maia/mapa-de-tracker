@@ -3,6 +3,7 @@ import { Row } from './Row'
 import { RowGroup } from './RowGroup'
 import { Tracker } from './Tracker'
 import { TextElement } from './TextElement'
+import { StatusLegend } from './StatusLegend'
 import { useLayoutStore } from '../store/layoutStore'
 import { GRID } from '../utils/gridConstants'
 import { useAppParams } from '../context/AppParamsContext'
@@ -205,6 +206,9 @@ export function ViewCanvas() {
           </div>
         </div>
       </div>
+
+      {/* Status Legend */}
+      <StatusLegend compact={true} />
 
       {/* Gemini Image (rosa dos ventos) */}
       <div className="absolute bottom-4 right-4">
