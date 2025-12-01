@@ -1847,7 +1847,28 @@ export const useLayoutStore = create<SectionState & LayoutActions>()(
             fields_id: fieldsId,
           },
         })
-        
+
+        // Proteção contra resposta "atrasada" quando o usuário já mudou de campo
+        // (por exemplo, clicou em "Criar campo" e foi para fieldId=0).
+        try {
+          const params = new URLSearchParams(window.location.search)
+          const currentFieldId = params.get('fieldId')
+          // Se o fieldId atual é 0 (modo criação) ou diferente do que foi pedido,
+          // ignoramos essa resposta para não sobrescrever o layout atual.
+          if (
+            currentFieldId === '0' ||
+            (currentFieldId !== null && !Number.isNaN(parseInt(currentFieldId, 10)) && parseInt(currentFieldId, 10) !== fieldsId)
+          ) {
+            console.warn('[layoutStore.loadFromApi] Resposta ignorada porque o campo atual mudou', {
+              requestedFieldId: fieldsId,
+              currentFieldId,
+            })
+            return { success: false, error: 'Resposta ignorada: campo atual mudou durante o carregamento' }
+          }
+        } catch {
+          // Se por algum motivo não conseguir ler a URL, segue fluxo normal
+        }
+
         // Verifica se a resposta vem no novo formato com mapa e campo
         let sectionsData = data
         let mapTexts: any = {}

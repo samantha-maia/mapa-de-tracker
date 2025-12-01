@@ -202,6 +202,15 @@ export function ViewCanvas() {
           </div>
         </div>
       </div>
+
+      {/* Gemini Image (rosa dos ventos) */}
+      <div className="absolute bottom-4 right-4">
+        <img 
+          src={`${import.meta.env.BASE_URL}Gemini_Generated_Image_kflrtdkflrtdkflr.jpg`}
+          alt="Rosa dos ventos" 
+          className="max-w-[150px] max-h-[150px] object-contain"
+        />
+      </div>
     </div>
   )
 }
