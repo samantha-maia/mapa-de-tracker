@@ -73,7 +73,17 @@ export function FieldSelector() {
   useEffect(() => {
     const currentUrlParams = new URLSearchParams(location.search)
     const currentUrlFieldId = currentUrlParams.get('fieldId')
-    const fieldIdToUse = appParams.fieldId !== null ? appParams.fieldId : currentUrlFieldId
+    const currentUrlMode = currentUrlParams.get('mode')
+
+    // Em modo criação explícito (fieldId=0 + mode=create), sempre prioriza a URL
+    // para evitar que o fieldId anterior do contexto "sobrescreva" o estado de criação.
+    let fieldIdToUse: string | null
+    if (currentUrlFieldId === '0' && currentUrlMode === 'create') {
+      fieldIdToUse = '0'
+    } else {
+      fieldIdToUse = appParams.fieldId !== null ? appParams.fieldId : currentUrlFieldId
+    }
+
     if (fieldIdToUse !== selectedFieldId) {
       setSelectedFieldId(fieldIdToUse)
     }
@@ -232,6 +242,11 @@ export function FieldSelector() {
 
   const handleCreate = () => {
     // Navegar para criação de novo campo (fieldId = 0) no modo create
+    // Também atualiza imediatamente o estado local para refletir o "novo campo"
+    setSelectedFieldId('0')
+    setFieldName('')
+    setIsEditingName(false)
+
     const params = new URLSearchParams()
     if (appParams.projectId) params.set('projectId', appParams.projectId)
     if (appParams.companyId) params.set('companyId', appParams.companyId)

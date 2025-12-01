@@ -20,10 +20,18 @@ function Header() {
   // Prioriza o contexto (que persiste) sobre a URL (que pode ser limpa)
   const urlParams = new URLSearchParams(location.search)
   const urlFieldId = urlParams.get('fieldId')
+  const urlMode = urlParams.get('mode')
   
   // Usa o contexto primeiro, depois a URL como fallback
-  // IMPORTANTE: verifica explicitamente !== null para permitir fieldId = "0"
-  const fieldIdToUse = appParams.fieldId !== null ? appParams.fieldId : urlFieldId
+  // EXCEÇÃO: em modo criação explícito (fieldId=0 + mode=create), prioriza sempre a URL
+  // para evitar que o fieldId anterior do contexto "vaze" para a tela de criação.
+  let fieldIdToUse: string | null
+  if (urlFieldId === '0' && urlMode === 'create') {
+    fieldIdToUse = '0'
+  } else {
+    // IMPORTANTE: verifica explicitamente !== null para permitir fieldId = "0"
+    fieldIdToUse = appParams.fieldId !== null ? appParams.fieldId : urlFieldId
+  }
   const fieldIdNum = fieldIdToUse !== null ? parseInt(fieldIdToUse, 10) : null
   
   const isEditMode = fieldIdNum !== null && !isNaN(fieldIdNum) && fieldIdNum !== 0
