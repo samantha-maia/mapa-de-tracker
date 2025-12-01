@@ -1840,7 +1840,7 @@ export const useLayoutStore = create<SectionState & LayoutActions>()(
         } catch {
           // Se por algum motivo não conseguir ler a URL, segue fluxo normal
         }
-
+        
         // Verifica se a resposta vem no novo formato com mapa e campo
         let sectionsData = data
         let mapTexts: any = {}
