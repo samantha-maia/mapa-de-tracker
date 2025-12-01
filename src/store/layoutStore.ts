@@ -485,42 +485,14 @@ export const useLayoutStore = create<SectionState & LayoutActions>()(
       set((s) => { s.historyPast.push(snap); s.historyFuture = [] })
       const id = nextId('group')
       set((s) => {
-        // Calculate position to place group behind all existing elements
-        let maxX = 0
-        let maxY = 0
-        
-        // Check all existing groups
-        for (const group of s.rowGroups) {
-          maxX = Math.max(maxX, (group.x ?? 0) + 400) // 400 is group width
-          maxY = Math.max(maxY, (group.y ?? 0) + 200) // 200 is group height
-        }
-        
-        // Check all existing rows
-        for (const row of s.rows) {
-          maxX = Math.max(maxX, (row.x ?? 0) + 300) // 300 is row width
-          maxY = Math.max(maxY, (row.y ?? 0) + 150) // 150 is row height
-        }
-        
-        // Check all loose trackers
-        for (const trackerId of s.looseIds) {
-          const tracker = s.trackersById[trackerId]
-          if (tracker) {
-            maxX = Math.max(maxX, (tracker.x ?? 0) + 115) // 115 is tracker width
-            maxY = Math.max(maxY, (tracker.y ?? 0) + 30)  // 30 is tracker height
-          }
-        }
-        
-        // Place group behind everything with some margin
-        const groupX = Math.max(0, maxX + 50)
-        const groupY = Math.max(0, maxY + 50)
-        
+        // Cria sempre no ponto (0,0) para melhor organização
         const nextSectionNumber = getNextSectionNumber(s.rowGroups)
         s.rowGroups.push({ 
           id, 
           databaseId: null,
           rowIds: [], 
-          x: groupX, 
-          y: groupY, 
+          x: 0, 
+          y: 0, 
           name: `Grupo ${s.rowGroups.length + 1}`,
           isFinalized: false,
           contourPath: '',
