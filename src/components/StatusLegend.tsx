@@ -141,9 +141,9 @@ export function StatusLegend({ compact = false, onClose, position, onPositionCha
               const color = getStatusColor(statusId)
               const description = STATUS_DESCRIPTIONS[statusId]
               return (
-                <div key={statusId} className="flex items-start gap-2">
+                <div key={statusId} className="flex items-center gap-2">
                   <div
-                    className="w-4 h-4 rounded-sm flex-shrink-0 mt-0.5 border border-gray-300"
+                    className="w-4 h-4 rounded-sm flex-shrink-0 border border-gray-300"
                     style={{ backgroundColor: color }}
                   />
                   <div className="flex-1 min-w-0">
@@ -171,9 +171,9 @@ export function StatusLegend({ compact = false, onClose, position, onPositionCha
           const color = getStatusColor(statusId)
           const description = STATUS_DESCRIPTIONS[statusId]
           return (
-            <div key={statusId} className="flex items-start gap-2">
+            <div key={statusId} className="flex items-center gap-2">
               <div
-                className="w-4 h-4 rounded-sm flex-shrink-0 mt-0.5 border border-gray-300"
+                className="w-4 h-4 rounded-sm flex-shrink-0 border border-gray-300"
                 style={{ backgroundColor: color }}
               />
               <div className="flex-1 min-w-0">
