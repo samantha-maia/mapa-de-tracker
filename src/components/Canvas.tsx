@@ -1247,7 +1247,10 @@ export function Canvas() {
                 </button>
                 <button 
                   className="flex-1 h-10 rounded-[12px] bg-gray-500 px-3 text-white text-xs font-medium hover:bg-gray-600 transition-colors flex items-center justify-center" 
-                  onClick={resetZoom}
+                  onClick={() => {
+                    resetZoom()
+                    resetPan()
+                  }}
                 >
                   Reset
                 </button>
