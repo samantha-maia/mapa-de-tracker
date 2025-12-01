@@ -1,4 +1,5 @@
 import { useRef, useCallback, useEffect, useState } from 'react'
+import { Info } from 'lucide-react'
 import { Row } from './Row'
 import { RowGroup } from './RowGroup'
 import { Tracker } from './Tracker'
@@ -11,6 +12,8 @@ import { useAppParams } from '../context/AppParamsContext'
 export function ViewCanvas() {
   const canvasRef = useRef<HTMLDivElement | null>(null)
   const [isLoading, setIsLoading] = useState(false)
+  const [isLegendVisible, setIsLegendVisible] = useState(true)
+  const [legendPosition, setLegendPosition] = useState({ x: 16, y: 16 })
   const looseIds = useLayoutStore((s) => s.looseIds)
   const rows = useLayoutStore((s) => s.rows)
   const rowGroups = useLayoutStore((s) => s.rowGroups)
@@ -208,7 +211,26 @@ export function ViewCanvas() {
       </div>
 
       {/* Status Legend */}
-      <StatusLegend compact={true} />
+      {isLegendVisible && (
+        <StatusLegend
+          compact={true}
+          onClose={() => setIsLegendVisible(false)}
+          position={legendPosition}
+          onPositionChange={setLegendPosition}
+        />
+      )}
+      
+      {/* Botão para mostrar legenda quando estiver fechada */}
+      {!isLegendVisible && (
+        <button
+          onClick={() => setIsLegendVisible(true)}
+          className="absolute top-4 left-4 z-50 px-3 py-2 rounded-lg border border-gray-200 bg-white shadow-lg hover:bg-gray-50 transition-colors flex items-center gap-2 text-xs font-medium text-gray-700"
+          title="Mostrar legenda de status"
+        >
+          <Info size={14} />
+          Legenda
+        </button>
+      )}
 
       {/* Gemini Image (rosa dos ventos) */}
       <div className="absolute bottom-4 right-4">
