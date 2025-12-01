@@ -5,7 +5,9 @@ import Selecto from 'react-selecto'
 import { 
   AlignLeft, AlignCenter, AlignRight, 
   AlignVerticalSpaceAround, AlignHorizontalSpaceAround,
-  AlignStartVertical, AlignCenterVertical, AlignEndVertical
+  AlignStartVertical, AlignCenterVertical, AlignEndVertical,
+  Plus, Layers, FolderPlus, Type, Copy, Save, Keyboard, Info,
+  GripVertical, Grid3x3, AlignJustify
 } from 'lucide-react'
 import { Palette } from './Palette'
 import { Row } from './Row'
@@ -707,31 +709,42 @@ export function Canvas() {
 
   return (
     <DndContext sensors={sensors} collisionDetection={pointerWithin} onDragStart={handleDragStart} onDragMove={handleDragMove} onDragOver={handleDragOver} onDragEnd={handleDragEnd}>
-      <div className="flex h-full min-h-0 gap-4 p-4">
-        <div className="w-56 shrink-0 overflow-y-auto">
+      <div className="flex h-full min-h-0 gap-3 p-3">
+        <div className="w-56 shrink-0 overflow-y-auto overflow-x-hidden scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-transparent">
           {/* Trackers Section */}
-          <div className="mb-6">
+          <div className="mb-4">
             <Palette />
           </div>
 
-          {/* Actions Section */}
-          <div className="space-y-4">
+          {/* Divider */}
+          <div className="h-px bg-gray-200 my-4" />
+
+          {/* Create Section */}
+          <div className="space-y-3 mb-4">
+            <div className="flex items-center gap-2 mb-2">
+              <Plus size={14} className="text-gray-500" />
+              <h3 className="text-xs font-semibold text-gray-700 uppercase tracking-wider">Criar</h3>
+            </div>
+
             {/* Row Actions */}
-            <div className="rounded-lg border border-[#daeef6] border-solid-1 bg-white p-3">
-              <h4 className="text-xs font-semibold text-gray-700 mb-2 uppercase tracking-wide">Fileiras</h4>
-              <div className="space-y-2">
+            <div className="rounded-lg border border-gray-200 bg-white p-2.5 shadow-sm">
+              <div className="flex items-center gap-2 mb-2">
+                <AlignJustify size={12} className="text-gray-500" />
+                <h4 className="text-[11px] font-medium text-gray-600">Fileiras</h4>
+              </div>
+              <div className="space-y-1.5">
                 <button 
-                  className="w-full h-10 rounded-[12px] bg-blue-600 px-3 text-white text-xs font-medium hover:bg-blue-700 transition-colors shadow-sm flex items-center justify-center" 
+                  className="w-full h-9 rounded-lg bg-blue-600 px-3 text-white text-xs font-medium hover:bg-blue-700 active:bg-blue-800 transition-all shadow-sm flex items-center justify-center gap-1.5" 
                   onClick={() => addEmptyRow()}
                 >
-                  + Criar fileira
+                  <Plus size={14} />
+                  Criar fileira
                 </button>
                 <button 
-                  className="w-full h-10 rounded-[12px] bg-emerald-600 px-3 text-white text-xs font-medium hover:bg-emerald-700 transition-colors shadow-sm disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center" 
+                  className="w-full h-9 rounded-lg bg-blue-50 text-blue-700 px-3 text-xs font-medium hover:bg-blue-100 active:bg-blue-200 transition-all border border-blue-200 disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center gap-1.5" 
                   onClick={() => {
                     const result = groupSelectedIntoRow()
                     if (!result) {
-                      // Show feedback if no loose trackers selected
                       const looseSelected = selectedIds.filter((id) => looseIds.includes(id))
                       if (looseSelected.length === 0) {
                         setErrorMessage('Selecione trackers que estão soltos no canvas (não dentro de fileiras) para agrupar em uma fileira.')
@@ -742,240 +755,270 @@ export function Canvas() {
                   disabled={selectedIds.length === 0}
                   title={selectedIds.length === 0 ? 'Selecione trackers soltos para agrupar' : 'Agrupa trackers soltos selecionados em uma fileira'}
                 >
+                  <Layers size={14} />
                   Agrupar em Fileira
                 </button>
               </div>
             </div>
 
             {/* Group Actions */}
-            <div className="rounded-lg border border-[#daeef6] border-solid-1 bg-white p-3">
-              <h4 className="text-xs font-semibold text-gray-700 mb-2 uppercase tracking-wide">Seções</h4>
-              <div className="space-y-2">
+            <div className="rounded-lg border border-gray-200 bg-white p-2.5 shadow-sm">
+              <div className="flex items-center gap-2 mb-2">
+                <Grid3x3 size={12} className="text-gray-500" />
+                <h4 className="text-[11px] font-medium text-gray-600">Seções</h4>
+              </div>
+              <div className="space-y-1.5">
                 <button 
-                  className="w-full h-10 rounded-[12px] bg-purple-600 px-3 text-white text-xs font-medium hover:bg-purple-700 transition-colors shadow-sm flex items-center justify-center" 
+                  className="w-full h-9 rounded-lg bg-purple-600 px-3 text-white text-xs font-medium hover:bg-purple-700 active:bg-purple-800 transition-all shadow-sm flex items-center justify-center gap-1.5" 
                   onClick={() => addEmptyRowGroup()}
                 >
-                  + Criar Seção
+                  <Plus size={14} />
+                  Criar Seção
                 </button>
                 <button 
-                  className="w-full h-10 rounded-[12px] bg-indigo-600 px-3 text-white text-xs font-medium hover:bg-indigo-700 transition-colors shadow-sm flex items-center justify-center" 
+                  className="w-full h-9 rounded-lg bg-purple-50 text-purple-700 px-3 text-xs font-medium hover:bg-purple-100 active:bg-purple-200 transition-all border border-purple-200 flex items-center justify-center gap-1.5" 
                   onClick={() => groupSelectedRowsIntoGroup()}
                 >
+                  <FolderPlus size={14} />
                   Agrupar em Seção
                 </button>
               </div>
             </div>
 
             {/* Text Actions */}
-            <div className="rounded-lg border border-[#daeef6] border-solid-1 bg-white p-3">
-              <h4 className="text-xs font-semibold text-gray-700 mb-2 uppercase tracking-wide">Texto</h4>
-              <div className="space-y-2">
-                <button 
-                  className="w-full h-10 rounded-[12px] bg-teal-600 px-3 text-white text-xs font-medium hover:bg-teal-700 transition-colors shadow-sm flex items-center justify-center" 
-                  onClick={() => {
-                    const rect = canvasRef.current?.getBoundingClientRect()
-                    if (rect) {
-                      // Calculate center of viewport considering zoom and pan
-                      const centerX = (rect.width / 2 - panX) / zoom
-                      const centerY = (rect.height / 2 - panY) / zoom
-                      const textId = addTextElement(centerX, centerY)
-                      // Focus on the new text element (it will enter edit mode on double-click)
-                      setSelected([textId])
-                    }
-                  }}
-                >
-                  + Adicionar Texto
-                </button>
+            <div className="rounded-lg border border-gray-200 bg-white p-2.5 shadow-sm">
+              <div className="flex items-center gap-2 mb-2">
+                <Type size={12} className="text-gray-500" />
+                <h4 className="text-[11px] font-medium text-gray-600">Texto</h4>
               </div>
+              <button 
+                className="w-full h-9 rounded-lg bg-teal-600 px-3 text-white text-xs font-medium hover:bg-teal-700 active:bg-teal-800 transition-all shadow-sm flex items-center justify-center gap-1.5" 
+                onClick={() => {
+                  const rect = canvasRef.current?.getBoundingClientRect()
+                  if (rect) {
+                    const centerX = (rect.width / 2 - panX) / zoom
+                    const centerY = (rect.height / 2 - panY) / zoom
+                    const textId = addTextElement(centerX, centerY)
+                    setSelected([textId])
+                  }
+                }}
+              >
+                <Plus size={14} />
+                Adicionar Texto
+              </button>
             </div>
+          </div>
 
-            {/* Text Editor Panel */}
-            <TextEditorPanel />
+          {/* Text Editor Panel */}
+          <TextEditorPanel />
 
-            {/* Selection Actions */}
-            {selectedIds.length > 0 && (
-              <div className="rounded-lg border border-[#daeef6] border-solid-1 bg-white p-3">
-                <h4 className="text-xs font-semibold text-gray-700 mb-2 uppercase tracking-wide">
-                  Selecionados ({selectedIds.length})
-                </h4>
-                <div className="space-y-2">
+          {/* Divider */}
+          {selectedIds.length > 0 && <div className="h-px bg-gray-200 my-4" />}
+
+          {/* Edit Section - Only show when items are selected */}
+          {selectedIds.length > 0 && (
+            <div className="space-y-3 mb-4">
+              <div className="flex items-center gap-2 mb-2">
+                <GripVertical size={14} className="text-gray-500" />
+                <h3 className="text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                  Editar ({selectedIds.length})
+                </h3>
+              </div>
+
+              {/* Selection Actions */}
+              <div className="rounded-lg border border-gray-200 bg-white p-2.5 shadow-sm">
+                <div className="space-y-1.5">
                   <button 
-                    className="w-full h-10 rounded-[12px] bg-orange-600 px-3 text-white text-xs font-medium hover:bg-orange-700 transition-colors shadow-sm flex items-center justify-center" 
+                    className="w-full h-9 rounded-lg bg-orange-600 px-3 text-white text-xs font-medium hover:bg-orange-700 active:bg-orange-800 transition-all shadow-sm flex items-center justify-center gap-1.5" 
                     onClick={() => duplicateSelected()}
                     title="Ctrl+V para duplicar"
                   >
-                    📋 Duplicar
+                    <Copy size={14} />
+                    Duplicar
                   </button>
                 </div>
               </div>
-            )}
-            
-            {/* Alignment Controls */}
-            {selectedIds.length >= 2 && (
-              <div className="rounded-lg border border-[#daeef6] border-solid-1 bg-white p-3">
-                <h4 className="text-xs font-semibold text-gray-700 mb-3 uppercase tracking-wide">Alinhamento</h4>
-                <div className="grid grid-cols-3 gap-1.5">
-                  <button 
-                    className="h-10 rounded-[12px] bg-gray-600 px-2 text-white text-xs font-medium flex items-center justify-center hover:bg-gray-700 transition-colors" 
-                    onClick={() => alignSelected('left')}
-                    title="Alinhar à esquerda"
-                  >
-                    <AlignLeft size={14} />
-                  </button>
-                  <button 
-                    className="h-10 rounded-[12px] bg-gray-600 px-2 text-white text-xs font-medium flex items-center justify-center hover:bg-gray-700 transition-colors" 
-                    onClick={() => alignSelected('center')}
-                    title="Centralizar horizontalmente"
-                  >
-                    <AlignCenter size={14} />
-                  </button>
-                  <button 
-                    className="h-10 rounded-[12px] bg-gray-600 px-2 text-white text-xs font-medium flex items-center justify-center hover:bg-gray-700 transition-colors" 
-                    onClick={() => alignSelected('right')}
-                    title="Alinhar à direita"
-                  >
-                    <AlignRight size={14} />
-                  </button>
-                  <button 
-                    className="h-10 rounded-[12px] bg-gray-600 px-2 text-white text-xs font-medium flex items-center justify-center hover:bg-gray-700 transition-colors" 
-                    onClick={() => alignSelected('top')}
-                    title="Alinhar ao topo"
-                  >
-                    <AlignStartVertical size={14} />
-                  </button>
-                  <button 
-                    className="h-10 rounded-[12px] bg-gray-600 px-2 text-white text-xs font-medium flex items-center justify-center hover:bg-gray-700 transition-colors" 
-                    onClick={() => alignSelected('middle')}
-                    title="Centralizar verticalmente"
-                  >
-                    <AlignCenterVertical size={14} />
-                  </button>
-                  <button 
-                    className="h-10 rounded-[12px] bg-gray-600 px-2 text-white text-xs font-medium flex items-center justify-center hover:bg-gray-700 transition-colors" 
-                    onClick={() => alignSelected('bottom')}
-                    title="Alinhar à base"
-                  >
-                    <AlignEndVertical size={14} />
-                  </button>
+              
+              {/* Alignment Controls */}
+              {selectedIds.length >= 2 && (
+                <div className="rounded-lg border border-gray-200 bg-white p-2.5 shadow-sm">
+                  <h4 className="text-[11px] font-medium text-gray-600 mb-2">Alinhamento</h4>
+                  <div className="grid grid-cols-3 gap-1.5">
+                    <button 
+                      className="h-8 rounded-lg bg-gray-100 text-gray-700 px-2 text-xs font-medium flex items-center justify-center hover:bg-gray-200 active:bg-gray-300 transition-all" 
+                      onClick={() => alignSelected('left')}
+                      title="Alinhar à esquerda"
+                    >
+                      <AlignLeft size={13} />
+                    </button>
+                    <button 
+                      className="h-8 rounded-lg bg-gray-100 text-gray-700 px-2 text-xs font-medium flex items-center justify-center hover:bg-gray-200 active:bg-gray-300 transition-all" 
+                      onClick={() => alignSelected('center')}
+                      title="Centralizar horizontalmente"
+                    >
+                      <AlignCenter size={13} />
+                    </button>
+                    <button 
+                      className="h-8 rounded-lg bg-gray-100 text-gray-700 px-2 text-xs font-medium flex items-center justify-center hover:bg-gray-200 active:bg-gray-300 transition-all" 
+                      onClick={() => alignSelected('right')}
+                      title="Alinhar à direita"
+                    >
+                      <AlignRight size={13} />
+                    </button>
+                    <button 
+                      className="h-8 rounded-lg bg-gray-100 text-gray-700 px-2 text-xs font-medium flex items-center justify-center hover:bg-gray-200 active:bg-gray-300 transition-all" 
+                      onClick={() => alignSelected('top')}
+                      title="Alinhar ao topo"
+                    >
+                      <AlignStartVertical size={13} />
+                    </button>
+                    <button 
+                      className="h-8 rounded-lg bg-gray-100 text-gray-700 px-2 text-xs font-medium flex items-center justify-center hover:bg-gray-200 active:bg-gray-300 transition-all" 
+                      onClick={() => alignSelected('middle')}
+                      title="Centralizar verticalmente"
+                    >
+                      <AlignCenterVertical size={13} />
+                    </button>
+                    <button 
+                      className="h-8 rounded-lg bg-gray-100 text-gray-700 px-2 text-xs font-medium flex items-center justify-center hover:bg-gray-200 active:bg-gray-300 transition-all" 
+                      onClick={() => alignSelected('bottom')}
+                      title="Alinhar à base"
+                    >
+                      <AlignEndVertical size={13} />
+                    </button>
+                  </div>
                 </div>
-              </div>
-            )}
+              )}
 
-            {/* Distribution Controls */}
-            {selectedIds.length >= 3 && (
-              <div className="rounded-lg border border-[#daeef6] border-solid-1 bg-white p-3">
-                <h4 className="text-xs font-semibold text-gray-700 mb-3 uppercase tracking-wide">Distribuir</h4>
-                <div className="flex gap-2">
-                  <button 
-                    className="flex-1 h-10 rounded-[12px] bg-purple-600 px-3 text-white text-xs font-medium flex items-center justify-center gap-1.5 hover:bg-purple-700 transition-colors shadow-sm" 
-                    onClick={() => distributeSelected('horizontal')}
-                    title="Distribuir horizontalmente"
-                  >
-                    <AlignHorizontalSpaceAround size={14} />
-                    <span>Horizontal</span>
-                  </button>
-                  <button 
-                    className="flex-1 h-10 rounded-[12px] bg-purple-600 px-3 text-white text-xs font-medium flex items-center justify-center gap-1.5 hover:bg-purple-700 transition-colors shadow-sm" 
-                    onClick={() => distributeSelected('vertical')}
-                    title="Distribuir verticalmente"
-                  >
-                    <AlignVerticalSpaceAround size={14} />
-                    <span>Vertical</span>
-                  </button>
+              {/* Distribution Controls */}
+              {selectedIds.length >= 3 && (
+                <div className="rounded-lg border border-gray-200 bg-white p-2.5 shadow-sm">
+                  <h4 className="text-[11px] font-medium text-gray-600 mb-2">Distribuir</h4>
+                  <div className="flex gap-1.5">
+                    <button 
+                      className="flex-1 h-8 rounded-lg bg-purple-50 text-purple-700 px-2 text-xs font-medium flex items-center justify-center gap-1 hover:bg-purple-100 active:bg-purple-200 transition-all border border-purple-200" 
+                      onClick={() => distributeSelected('horizontal')}
+                      title="Distribuir horizontalmente"
+                    >
+                      <AlignHorizontalSpaceAround size={13} />
+                      <span>H</span>
+                    </button>
+                    <button 
+                      className="flex-1 h-8 rounded-lg bg-purple-50 text-purple-700 px-2 text-xs font-medium flex items-center justify-center gap-1 hover:bg-purple-100 active:bg-purple-200 transition-all border border-purple-200" 
+                      onClick={() => distributeSelected('vertical')}
+                      title="Distribuir verticalmente"
+                    >
+                      <AlignVerticalSpaceAround size={13} />
+                      <span>V</span>
+                    </button>
+                  </div>
                 </div>
-              </div>
-            )}
-            
-            {/* Keyboard Shortcuts */}
-            <div className="rounded-lg border border-[#daeef6] border-solid-1 bg-white p-3">
-              <h4 className="text-xs font-semibold text-gray-700 mb-2 uppercase tracking-wide">Atalhos</h4>
-              <div className="space-y-1 text-[10px] text-gray-600">
-                <div className="flex justify-between">
-                  <span className="text-gray-500">Scroll</span>
-                  <span className="font-mono">Pan</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-gray-500">Ctrl+Scroll</span>
-                  <span className="font-mono">Zoom</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-gray-500">Space+Drag</span>
-                  <span className="font-mono">Pan</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-gray-500">Alt+Drag</span>
-                  <span className="font-mono">Ajuste Vertical</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-gray-500">Ctrl+A</span>
-                  <span className="font-mono">Selecionar Tudo</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-gray-500">Ctrl+V</span>
-                  <span className="font-mono">Duplicar</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-gray-500">Escape</span>
-                  <span className="font-mono">Limpar Seleção</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-gray-500">Delete</span>
-                  <span className="font-mono">Remover</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-gray-500">Double-click</span>
-                  <span className="font-mono">Reset Zoom</span>
-                </div>
-              </div>
+              )}
+            </div>
+          )}
+
+          {/* Divider */}
+          <div className="h-px bg-gray-200 my-4" />
+
+          {/* Info Section */}
+          <div className="space-y-3 mb-4">
+            <div className="flex items-center gap-2 mb-2">
+              <Info size={14} className="text-gray-500" />
+              <h3 className="text-xs font-semibold text-gray-700 uppercase tracking-wider">Informações</h3>
             </div>
             
             {/* Status Legend */}
             <StatusLegend />
             
-            {/* File Actions */}
-            <div className="rounded-lg border border-[#daeef6] border-solid-1 bg-white p-3 space-y-2">
-              <h4 className="text-xs font-semibold text-gray-700 mb-2 uppercase tracking-wide">Arquivo</h4>
-              <button
-                className="w-full h-10 rounded-[12px] bg-blue-600 px-3 text-white text-xs font-medium hover:bg-blue-700 transition-colors shadow-sm disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
-                onClick={async () => {
-                  const projectId = appParams.projectId ? parseInt(appParams.projectId, 10) : null
-                  const fieldId = appParams.fieldId ? parseInt(appParams.fieldId, 10) : null
-                  
-                  // Validar se há pelo menos uma seção antes de salvar
-                  if (rowGroups.length === 0) {
-                    setShowSectionErrorModal(true)
-                    return
-                  }
-                  
-                  // Se estiver criando um novo mapa (fieldId === 0), mostrar modal para pedir o nome
-                  if (fieldId === 0) {
-                    setFieldNameInput('')
-                    setShowNameModal(true)
-                    return
-                  }
-                  
-                  // Se não for criação, salvar diretamente
-                  setIsSaving(true)
-                  const result = await saveToApi(projectId, fieldId, appParams.authToken, null)
-                  setIsSaving(false)
-                  if (result.success) {
-                    await refreshScreenData(fieldId)
-                    setShowSuccessModal(true)
-                  } else {
-                    // Se o erro for sobre falta de seção, mostrar modal personalizado
-                    if (result.error && result.error.includes('seção')) {
-                      setShowSectionErrorModal(true)
-                    } else {
-                      setErrorMessage(`Erro ao salvar: ${result.error}`)
-                      setShowErrorModal(true)
-                    }
-                  }
-                }}
-                disabled={isSaving}
-              >
-                {isSaving ? '⏳ Salvando...' : '💾 Salvar Mapa'}
-              </button>
+            {/* Keyboard Shortcuts */}
+            <div className="rounded-lg border border-gray-200 bg-white p-2.5 shadow-sm">
+              <div className="flex items-center gap-2 mb-2">
+                <Keyboard size={12} className="text-gray-500" />
+                <h4 className="text-[11px] font-medium text-gray-600">Atalhos</h4>
+              </div>
+              <div className="space-y-1 text-[10px] text-gray-600">
+                <div className="flex justify-between items-center py-0.5">
+                  <span className="text-gray-500">Scroll</span>
+                  <kbd className="px-1.5 py-0.5 bg-gray-100 rounded text-[9px] font-mono">Pan</kbd>
+                </div>
+                <div className="flex justify-between items-center py-0.5">
+                  <span className="text-gray-500">Ctrl+Scroll</span>
+                  <kbd className="px-1.5 py-0.5 bg-gray-100 rounded text-[9px] font-mono">Zoom</kbd>
+                </div>
+                <div className="flex justify-between items-center py-0.5">
+                  <span className="text-gray-500">Space+Drag</span>
+                  <kbd className="px-1.5 py-0.5 bg-gray-100 rounded text-[9px] font-mono">Pan</kbd>
+                </div>
+                <div className="flex justify-between items-center py-0.5">
+                  <span className="text-gray-500">Alt+Drag</span>
+                  <kbd className="px-1.5 py-0.5 bg-gray-100 rounded text-[9px] font-mono">Vertical</kbd>
+                </div>
+                <div className="flex justify-between items-center py-0.5">
+                  <span className="text-gray-500">Ctrl+A</span>
+                  <kbd className="px-1.5 py-0.5 bg-gray-100 rounded text-[9px] font-mono">Selecionar</kbd>
+                </div>
+                <div className="flex justify-between items-center py-0.5">
+                  <span className="text-gray-500">Ctrl+V</span>
+                  <kbd className="px-1.5 py-0.5 bg-gray-100 rounded text-[9px] font-mono">Duplicar</kbd>
+                </div>
+                <div className="flex justify-between items-center py-0.5">
+                  <span className="text-gray-500">Escape</span>
+                  <kbd className="px-1.5 py-0.5 bg-gray-100 rounded text-[9px] font-mono">Limpar</kbd>
+                </div>
+                <div className="flex justify-between items-center py-0.5">
+                  <span className="text-gray-500">Delete</span>
+                  <kbd className="px-1.5 py-0.5 bg-gray-100 rounded text-[9px] font-mono">Remover</kbd>
+                </div>
+              </div>
             </div>
+          </div>
+
+          {/* Divider */}
+          <div className="h-px bg-gray-200 my-4" />
+            
+          {/* File Actions */}
+          <div className="rounded-lg border-2 border-blue-200 bg-blue-50 p-2.5 shadow-sm">
+            <div className="flex items-center gap-2 mb-2">
+              <Save size={12} className="text-blue-600" />
+              <h4 className="text-[11px] font-semibold text-blue-700">Arquivo</h4>
+            </div>
+            <button
+              className="w-full h-10 rounded-lg bg-blue-600 px-3 text-white text-sm font-semibold hover:bg-blue-700 active:bg-blue-800 transition-all shadow-md disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+              onClick={async () => {
+                const projectId = appParams.projectId ? parseInt(appParams.projectId, 10) : null
+                const fieldId = appParams.fieldId ? parseInt(appParams.fieldId, 10) : null
+                
+                if (rowGroups.length === 0) {
+                  setShowSectionErrorModal(true)
+                  return
+                }
+                
+                if (fieldId === 0) {
+                  setFieldNameInput('')
+                  setShowNameModal(true)
+                  return
+                }
+                
+                setIsSaving(true)
+                const result = await saveToApi(projectId, fieldId, appParams.authToken, null)
+                setIsSaving(false)
+                if (result.success) {
+                  await refreshScreenData(fieldId)
+                  setShowSuccessModal(true)
+                } else {
+                  if (result.error && result.error.includes('seção')) {
+                    setShowSectionErrorModal(true)
+                  } else {
+                    setErrorMessage(`Erro ao salvar: ${result.error}`)
+                    setShowErrorModal(true)
+                  }
+                }
+              }}
+              disabled={isSaving}
+            >
+              <Save size={16} />
+              {isSaving ? 'Salvando...' : 'Salvar Mapa'}
+            </button>
           </div>
         </div>
         
