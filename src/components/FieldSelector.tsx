@@ -8,6 +8,7 @@ import { useNavigate, useLocation } from 'react-router-dom'
 import { Eye, Save, Trash2 } from 'lucide-react'
 import AddCircleRoundedIcon from '@mui/icons-material/AddCircleRounded'
 import EditRoundedIcon from '@mui/icons-material/EditRounded'
+import { generateCanvasPDF } from '../utils/pdfGenerator'
 import { FaFileAlt } from 'react-icons/fa'
 
 const parseNumericParam = (value: string | null) => {
@@ -556,9 +557,14 @@ export function FieldSelector() {
                   <EditRoundedIcon style={{ fontSize: 18 }} className="text-[#1d5cc6] group-hover:text-white" />
                 </button>
                 <button
-                  onClick={() => {
-                    // TODO: Implementar download de PDF
-                    console.log('Download PDF')
+                  onClick={async () => {
+                    try {
+                      const fieldName = selectedField?.name || `Campo ${selectedField?.field_number || selectedField?.id || ''}`
+                      await generateCanvasPDF(fieldName)
+                    } catch (error) {
+                      console.error('Erro ao gerar PDF:', error)
+                      alert('Erro ao gerar PDF. Verifique o console para mais detalhes.')
+                    }
                   }}
                   className="group flex items-center justify-center transition-colors bg-transparent hover:bg-[#487eda] hover:border-[#487eda]"
                   style={{ 
