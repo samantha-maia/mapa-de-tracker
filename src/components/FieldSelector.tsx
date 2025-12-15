@@ -8,6 +8,7 @@ import { useNavigate, useLocation } from 'react-router-dom'
 import { Eye, Save, Trash2 } from 'lucide-react'
 import AddCircleRoundedIcon from '@mui/icons-material/AddCircleRounded'
 import EditRoundedIcon from '@mui/icons-material/EditRounded'
+import { FaFileAlt } from 'react-icons/fa'
 
 const parseNumericParam = (value: string | null) => {
   if (!value) return null
@@ -507,7 +508,7 @@ export function FieldSelector() {
     <div className="w-full bg-white border-b border-[#daeef6] px-0 py-3">
       {nameEditorPortal}
       {deleteModal}
-      <div className="flex items-center gap-3">
+      <div className="flex items-center justify-between gap-3 px-4">
         <div className="flex items-center gap-3">
           <select
             id="field-select"
@@ -535,78 +536,96 @@ export function FieldSelector() {
               </option>
             ))}
           </select>
-        </div>
-        
-        <div className="flex items-center gap-2">
-          {canEditOrView && (
-            <>
-              <button
-                onClick={handleEdit}
-                className="group flex items-center justify-center transition-colors bg-transparent hover:bg-[#487eda] hover:border-[#487eda]"
-                style={{ 
-                  width: '40px', 
-                  height: '40px', 
-                  borderRadius: '8px', 
-                  borderWidth: '1px',
-                  borderStyle: 'solid',
-                  borderColor: '#dadee6'
-                }}
-                title={t('fieldSelector.button.editTitle')}
-              >
-                <EditRoundedIcon style={{ fontSize: 18 }} className="text-[#1d5cc6] group-hover:text-white" />
-              </button>
-              <button
-                onClick={handleView}
-                className="h-10 px-4 rounded-[12px] bg-indigo-600 text-white text-xs font-medium hover:bg-indigo-700 transition-colors shadow-sm flex items-center gap-2"
-                style={{
-                  borderWidth: '1px',
-                  borderStyle: 'solid',
-                  borderColor: '#dadee6'
-                }}
-                title={t('fieldSelector.button.viewTitle')}
-              >
-                <Eye size={14} />
-                {t('fieldSelector.button.view')}
-              </button>
-              <button
-                onClick={handleDeleteClick}
-                disabled={isDeletingField}
-                className="h-10 px-4 rounded-[12px] border border-red-200 text-red-600 text-xs font-medium hover:bg-red-50 hover:border-red-400 transition-colors shadow-sm flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
-                title={t('fieldSelector.button.deleteTitle')}
-              >
-                <Trash2 size={14} />
-                {t('fieldSelector.button.delete')}
-              </button>
-            </>
-          )}
-          <div className="h-6 w-px bg-[#dadee6] mx-2" />
-          <button
-            onClick={handleCreate}
-            className="group flex items-center justify-center gap-2 transition-colors bg-transparent hover:bg-[#487eda] hover:border-[#487eda]"
-            style={{
-              height: '40px',
-              paddingLeft: '14px',
-              paddingRight: '14px',
-              borderRadius: '12px',
-              borderWidth: '1px',
-              borderStyle: 'solid',
-              borderColor: '#dadee6'
-            }}
-            title={t('fieldSelector.button.createTitle')}
-          >
-            <AddCircleRoundedIcon
-              style={{ fontSize: 18 }}
-              className="text-[#1d5cc6] group-hover:text-white"
-            />
-            <span className="text-sm font-medium text-[#1d5cc6] group-hover:text-white">{t('fieldSelector.button.create')}</span>
-          </button>
-        </div>
-        
-        {loading && (
-          <div className="text-xs text-gray-500">
-            {t('fieldSelector.button.saving')}
+          
+          <div className="flex items-center gap-2">
+            {canEditOrView && (
+              <>
+                <button
+                  onClick={handleEdit}
+                  className="group flex items-center justify-center transition-colors bg-transparent hover:bg-[#487eda] hover:border-[#487eda]"
+                  style={{ 
+                    width: '40px', 
+                    height: '40px', 
+                    borderRadius: '8px', 
+                    borderWidth: '1px',
+                    borderStyle: 'solid',
+                    borderColor: '#dadee6'
+                  }}
+                  title={t('fieldSelector.button.editTitle')}
+                >
+                  <EditRoundedIcon style={{ fontSize: 18 }} className="text-[#1d5cc6] group-hover:text-white" />
+                </button>
+                <button
+                  onClick={() => {
+                    // TODO: Implementar download de PDF
+                    console.log('Download PDF')
+                  }}
+                  className="group flex items-center justify-center transition-colors bg-transparent hover:bg-[#487eda] hover:border-[#487eda]"
+                  style={{ 
+                    width: '40px', 
+                    height: '40px', 
+                    borderRadius: '8px', 
+                    borderWidth: '1px',
+                    borderStyle: 'solid',
+                    borderColor: '#dadee6'
+                  }}
+                  title="Baixar PDF"
+                >
+                  <FaFileAlt size={18} className="text-[#1d5cc6] group-hover:text-white" />
+                </button>
+                <button
+                  onClick={handleView}
+                  className="h-10 px-4 rounded-[12px] bg-indigo-600 text-white text-xs font-medium hover:bg-indigo-700 transition-colors shadow-sm flex items-center gap-2"
+                  style={{
+                    borderWidth: '1px',
+                    borderStyle: 'solid',
+                    borderColor: '#dadee6'
+                  }}
+                  title={t('fieldSelector.button.viewTitle')}
+                >
+                  <Eye size={14} />
+                  {t('fieldSelector.button.view')}
+                </button>
+                <button
+                  onClick={handleDeleteClick}
+                  disabled={isDeletingField}
+                  className="h-10 px-4 rounded-[12px] border border-red-200 text-red-600 text-xs font-medium hover:bg-red-50 hover:border-red-400 transition-colors shadow-sm flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                  title={t('fieldSelector.button.deleteTitle')}
+                >
+                  <Trash2 size={14} />
+                  {t('fieldSelector.button.delete')}
+                </button>
+              </>
+            )}
           </div>
-        )}
+          
+          {loading && (
+            <div className="text-xs text-gray-500">
+              {t('fieldSelector.button.saving')}
+            </div>
+          )}
+        </div>
+        
+        <button
+          onClick={handleCreate}
+          className="group flex items-center justify-center gap-2 transition-colors bg-transparent hover:bg-[#487eda] hover:border-[#487eda]"
+          style={{
+            height: '40px',
+            paddingLeft: '14px',
+            paddingRight: '14px',
+            borderRadius: '12px',
+            borderWidth: '1px',
+            borderStyle: 'solid',
+            borderColor: '#dadee6'
+          }}
+          title={t('fieldSelector.button.createTitle')}
+        >
+          <AddCircleRoundedIcon
+            style={{ fontSize: 18 }}
+            className="text-[#1d5cc6] group-hover:text-white"
+          />
+          <span className="text-sm font-medium text-[#1d5cc6] group-hover:text-white">{t('fieldSelector.button.create')}</span>
+        </button>
       </div>
     </div>
   )
