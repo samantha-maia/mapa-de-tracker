@@ -10,6 +10,16 @@ import { X } from 'lucide-react'
 type RowItemProps = { id: string; rowId: string; viewMode?: boolean }
 type RowItemRemoveButtonProps = { id: string }
 
+// Converte cor HEX para rgba com opacidade
+function hexToRgba(hex: string, opacity: number): string {
+  const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex)
+  if (!result) return hex
+  const r = parseInt(result[1], 16)
+  const g = parseInt(result[2], 16)
+  const b = parseInt(result[3], 16)
+  return `rgba(${r}, ${g}, ${b}, ${opacity})`
+}
+
 function RowItem({ id, rowId, viewMode = false }: RowItemProps) {
   const tracker = useLayoutStore((s) => s.trackersById[id])
   const row = useLayoutStore((s) => s.rows.find((r) => r.id === rowId)!)
@@ -174,12 +184,13 @@ function RowItem({ id, rowId, viewMode = false }: RowItemProps) {
         ...style,
         borderColor: trackerStatusColor.color,
         borderWidth: '1.5px',
-        borderStyle: 'solid'
+        borderStyle: 'solid',
+        backgroundColor: hexToRgba(trackerStatusColor.color, 0.1), // Background com 10% de opacidade
       }} 
       data-tracker-id={id}
       {...(isDraggingVertical || viewMode ? {} : attributes)} 
       {...(isDraggingVertical || viewMode ? {} : listeners)} 
-      className={`rounded bg-white p-2 text-xs shadow-sm ${
+      className={`rounded p-2 text-xs shadow-sm ${
         isDraggingVertical ? 'cursor-ns-resize' : 'cursor-move'
       } relative group ${isDragging ? 'ring-2 ring-blue-300' : ''}`}
       onMouseDown={handleMouseDown}

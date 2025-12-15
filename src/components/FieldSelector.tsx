@@ -3,6 +3,7 @@ import { createPortal } from 'react-dom'
 import { useFieldsStore } from '../store/fieldsStore'
 import type { Field } from '../store/fieldsStore'
 import { useAppParams } from '../context/AppParamsContext'
+import { useI18n } from '../i18n'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { Eye, Save, Trash2 } from 'lucide-react'
 import AddCircleRoundedIcon from '@mui/icons-material/AddCircleRounded'
@@ -34,12 +35,13 @@ export function FieldSelector() {
   const navigate = useNavigate()
   const location = useLocation()
   const appParams = useAppParams()
+  const { t } = useI18n()
   const { fields, loading, fetchFields, updateFieldName, deleteField } = useFieldsStore()
   
   // Debug: verificar se os hooks estão funcionando
   if (typeof navigate !== 'function' || !location) {
     console.error('FieldSelector: hooks do router não estão disponíveis')
-    return <div className="w-full bg-white border-b border-[#daeef6] px-4 py-3 text-red-600">Erro: Router não disponível</div>
+    return <div className="w-full bg-white border-b border-[#daeef6] px-4 py-3 text-red-600">{t('fieldSelector.routerError')}</div>
   }
   
   // Inicializa selectedFieldId com appParams.fieldId ou com o parâmetro da URL como fallback
@@ -193,6 +195,7 @@ export function FieldSelector() {
     params.set('fieldId', firstFieldId)
     params.set('mode', 'view')
     if (appParams.authToken) params.set('authToken', appParams.authToken)
+    if (appParams.locale) params.set('locale', appParams.locale)
 
     navigate(`/view?${params.toString()}`, { replace: true })
   }, [fields, selectedFieldId, appParams.projectId, appParams.companyId, appParams.fieldId, appParams.authToken, location.search, navigate, loading])
@@ -207,6 +210,7 @@ export function FieldSelector() {
       if (appParams.projectId) params.set('projectId', appParams.projectId)
       if (appParams.companyId) params.set('companyId', appParams.companyId)
       if (appParams.authToken) params.set('authToken', appParams.authToken)
+      if (appParams.locale) params.set('locale', appParams.locale)
       const queryString = params.toString()
       navigate(queryString ? `${location.pathname}?${queryString}` : location.pathname, { replace: true })
       return
@@ -221,6 +225,7 @@ export function FieldSelector() {
     if (appParams.companyId) params.set('companyId', appParams.companyId)
     params.set('fieldId', newFieldId)
     if (appParams.authToken) params.set('authToken', appParams.authToken)
+    if (appParams.locale) params.set('locale', appParams.locale)
     
     // Determina o modo e a rota baseado na rota atual
     const isViewMode = location.pathname === '/view'
@@ -253,6 +258,7 @@ export function FieldSelector() {
     params.set('fieldId', '0')
     params.set('mode', 'create')
     if (appParams.authToken) params.set('authToken', appParams.authToken)
+    if (appParams.locale) params.set('locale', appParams.locale)
     
     navigate(`/?${params.toString()}`, { replace: true })
   }
@@ -266,6 +272,7 @@ export function FieldSelector() {
       params.set('fieldId', selectedFieldId)
       params.set('mode', 'edit')
       if (appParams.authToken) params.set('authToken', appParams.authToken)
+      if (appParams.locale) params.set('locale', appParams.locale)
       
       navigate(`/?${params.toString()}`, { replace: true })
     }
@@ -280,13 +287,14 @@ export function FieldSelector() {
       params.set('fieldId', selectedFieldId)
       params.set('mode', 'view')
       if (appParams.authToken) params.set('authToken', appParams.authToken)
+      if (appParams.locale) params.set('locale', appParams.locale)
       navigate(`/view?${params.toString()}`, { replace: true })
     }
   }
 
   const handleSaveFieldName = async () => {
     if (!fieldName.trim()) {
-      alert('Por favor, insira um nome para o campo')
+      alert(t('fieldSelector.alert.nameRequired'))
       return
     }
 
@@ -295,14 +303,14 @@ export function FieldSelector() {
     try {
       if (selectedFieldId === '0') {
         // Não pode criar campo aqui - campo é criado ao salvar o mapa na trackers-map
-        alert('Para criar um novo campo, use o botão "Criar novo campo" e depois salve o mapa')
+        alert(t('fieldSelector.alert.createInfo'))
         setIsSavingName(false)
         return
       } else if (selectedFieldId) {
         // Atualizar campo existente
         const fieldIdNum = parseInt(selectedFieldId, 10)
         if (isNaN(fieldIdNum)) {
-          alert('FieldId inválido')
+          alert(t('fieldSelector.alert.invalidFieldId'))
           setIsSavingName(false)
           return
         }
@@ -318,12 +326,12 @@ export function FieldSelector() {
             console.warn('Não foi possível recarregar campos: projectId ou companyId inválido')
           }
         } else {
-          alert(`Erro ao atualizar campo: ${result.error}`)
+          alert(`${t('fieldSelector.alert.updateError')}: ${result.error}`)
         }
       }
     } catch (error) {
       console.error('Erro ao salvar nome do campo:', error)
-      alert('Erro ao salvar nome do campo')
+      alert(t('fieldSelector.alert.updateError'))
     } finally {
       setIsSavingName(false)
     }
@@ -344,7 +352,7 @@ export function FieldSelector() {
   const selectedField = selectedFieldId ? fields.find(f => f.id === parseInt(selectedFieldId, 10)) : null
   const selectedFieldLabel = selectedField
     ? selectedField.name || `Campo ${selectedField.field_number || selectedField.id}`
-    : 'este campo'
+    : t('fieldSelector.select.placeholder')
   const hasFieldSelected = selectedFieldId !== null && selectedFieldId !== ''
   const canEditOrView = hasFieldSelected && selectedFieldId !== '0'
   const showNameInput = hasFieldSelected && isEditingName && selectedFieldId !== '0'
@@ -366,7 +374,7 @@ export function FieldSelector() {
 
     const fieldIdNum = parseInt(selectedFieldId, 10)
     if (isNaN(fieldIdNum)) {
-      setDeleteError('FieldId inválido')
+      setDeleteError(t('fieldSelector.alert.invalidFieldId'))
       return
     }
 
@@ -376,7 +384,7 @@ export function FieldSelector() {
     try {
       const result = await deleteField(fieldIdNum, appParams.authToken)
       if (!result.success) {
-        setDeleteError(result.error || 'Não foi possível excluir o campo')
+        setDeleteError(result.error || t('fieldSelector.alert.deleteError'))
         return
       }
 
@@ -396,7 +404,7 @@ export function FieldSelector() {
       }
     } catch (error) {
       console.error('Erro ao excluir campo:', error)
-      setDeleteError('Erro inesperado ao excluir campo')
+      setDeleteError(t('fieldSelector.alert.deleteUnexpected'))
     } finally {
       setIsDeletingField(false)
     }
@@ -408,7 +416,7 @@ export function FieldSelector() {
         type="text"
         value={fieldName}
         onChange={(e) => setFieldName(e.target.value)}
-        placeholder="Nome do campo"
+        placeholder={t('fieldSelector.input.placeholder')}
         className="h-10 px-3 rounded-[12px] border border-gray-300 bg-white text-sm font-medium text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
         style={{
           width: '200px',
@@ -428,19 +436,19 @@ export function FieldSelector() {
         onClick={handleSaveFieldName}
         disabled={isSavingName || !fieldName.trim()}
         className="h-10 px-3 rounded-[12px] bg-green-600 text-white text-xs font-medium hover:bg-green-700 transition-colors shadow-sm flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
-        title="Salvar nome do campo"
+        title={t('fieldSelector.button.saveTitle')}
       >
         <Save size={14} />
-        {isSavingName ? 'Salvando...' : 'Salvar'}
+        {isSavingName ? t('fieldSelector.button.saving') : t('fieldSelector.button.save')}
       </button>
       {selectedFieldId !== '0' && (
         <button
           onClick={handleCancelEditName}
           disabled={isSavingName}
           className="h-10 px-3 rounded-[12px] bg-gray-500 text-white text-xs font-medium hover:bg-gray-600 transition-colors shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
-          title="Cancelar edição"
+          title={t('fieldSelector.button.cancel')}
         >
-          Cancelar
+          {t('fieldSelector.button.cancel')}
         </button>
       )}
     </div>
@@ -456,7 +464,7 @@ export function FieldSelector() {
   const deleteModalContent = (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4">
       <div className="w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl">
-        <h3 className="text-lg font-semibold text-gray-900">Excluir campo?</h3>
+        <h3 className="text-lg font-semibold text-gray-900">{t('fieldSelector.modal.deleteTitle')}</h3>
         <p className="mt-2 text-sm text-gray-600">
           Tem certeza de que deseja excluir{' '}
           <span className="font-medium text-gray-900">{selectedFieldLabel}</span>?
@@ -473,7 +481,7 @@ export function FieldSelector() {
             disabled={isDeletingField}
             className="h-10 px-4 rounded-[12px] border border-gray-300 text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            Cancelar
+            {t('fieldSelector.button.cancel')}
           </button>
           <button
             onClick={handleConfirmDelete}
@@ -481,7 +489,7 @@ export function FieldSelector() {
             className="h-10 px-4 rounded-[12px] bg-red-600 text-white text-sm font-medium hover:bg-red-700 transition-colors shadow-sm flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             <Trash2 size={14} />
-            {isDeletingField ? 'Excluindo...' : 'Excluir'}
+            {isDeletingField ? t('fieldSelector.button.saving') : t('fieldSelector.button.delete')}
           </button>
         </div>
       </div>
@@ -519,8 +527,8 @@ export function FieldSelector() {
             }}
             disabled={loading || isSavingName}
           >
-            <option value="" disabled> Selecione um campo</option>
-            <option value="0">+ Criar novo campo</option>
+            <option value="" disabled> {t('fieldSelector.select.placeholder')}</option>
+            <option value="0">{t('fieldSelector.select.create')}</option>
             {fields.map((field) => (
               <option key={field.id} value={field.id.toString()}>
                 {field.name || `Campo ${field.field_number || field.id}`}
@@ -543,7 +551,7 @@ export function FieldSelector() {
                   borderStyle: 'solid',
                   borderColor: '#dadee6'
                 }}
-                title="Editar campo selecionado"
+                title={t('fieldSelector.button.editTitle')}
               >
                 <EditRoundedIcon style={{ fontSize: 18 }} className="text-[#1d5cc6] group-hover:text-white" />
               </button>
@@ -555,19 +563,19 @@ export function FieldSelector() {
                   borderStyle: 'solid',
                   borderColor: '#dadee6'
                 }}
-                title="Visualizar campo selecionado"
+                title={t('fieldSelector.button.viewTitle')}
               >
                 <Eye size={14} />
-                Visualizar
+                {t('fieldSelector.button.view')}
               </button>
               <button
                 onClick={handleDeleteClick}
                 disabled={isDeletingField}
                 className="h-10 px-4 rounded-[12px] border border-red-200 text-red-600 text-xs font-medium hover:bg-red-50 hover:border-red-400 transition-colors shadow-sm flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
-                title="Excluir campo selecionado"
+                title={t('fieldSelector.button.deleteTitle')}
               >
                 <Trash2 size={14} />
-                Excluir
+                {t('fieldSelector.button.delete')}
               </button>
             </>
           )}
@@ -584,19 +592,19 @@ export function FieldSelector() {
               borderStyle: 'solid',
               borderColor: '#dadee6'
             }}
-            title="Criar novo campo"
+            title={t('fieldSelector.button.createTitle')}
           >
             <AddCircleRoundedIcon
               style={{ fontSize: 18 }}
               className="text-[#1d5cc6] group-hover:text-white"
             />
-            <span className="text-sm font-medium text-[#1d5cc6] group-hover:text-white">Criar campo</span>
+            <span className="text-sm font-medium text-[#1d5cc6] group-hover:text-white">{t('fieldSelector.button.create')}</span>
           </button>
         </div>
         
         {loading && (
           <div className="text-xs text-gray-500">
-            Carregando...
+            {t('fieldSelector.button.saving')}
           </div>
         )}
       </div>

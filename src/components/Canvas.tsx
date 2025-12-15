@@ -24,8 +24,10 @@ import { useFieldsStore } from '../store/fieldsStore'
 import { ROW_GRID_X, ROW_GRID_Y, TRACKER_GRID, GRID } from '../utils/gridConstants'
 import { useAppParams } from '../context/AppParamsContext'
 import { useNavigate } from 'react-router-dom'
+import { useI18n } from '../i18n'
 
 export function Canvas() {
+  const { t } = useI18n()
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 0 } }))
   const [active, setActive] = useState<{ from: 'palette' | 'loose' | 'row' | 'groupContainer' | 'text'; type?: TrackerType; id?: string; ext?: ExternalTracker } | null>(null)
   const [isPanning, setIsPanning] = useState(false)
@@ -723,14 +725,14 @@ export function Canvas() {
           <div className="space-y-3 mb-4">
             <div className="flex items-center gap-2 mb-2">
               <Plus size={14} className="text-gray-500" />
-              <h3 className="text-xs font-semibold text-gray-700 uppercase tracking-wider">Criar</h3>
+              <h3 className="text-xs font-semibold text-gray-700 uppercase tracking-wider">{t('canvas.create')}</h3>
             </div>
 
             {/* Row Actions */}
             <div className="rounded-lg border border-gray-200 bg-white p-2.5 shadow-sm">
               <div className="flex items-center gap-2 mb-2">
                 <AlignJustify size={12} className="text-gray-500" />
-                <h4 className="text-[11px] font-medium text-gray-600">Fileiras</h4>
+                <h4 className="text-[11px] font-medium text-gray-600">{t('canvas.rows')}</h4>
               </div>
               <div className="space-y-1.5">
                 <button 
@@ -738,7 +740,7 @@ export function Canvas() {
                   onClick={() => addEmptyRow()}
                 >
                   <Plus size={14} />
-                  Criar fileira
+                  {t('canvas.createRow')}
                 </button>
                 <button 
                   className="w-full h-9 rounded-lg bg-blue-50 text-blue-700 px-3 text-xs font-medium hover:bg-blue-100 active:bg-blue-200 transition-all border border-blue-200 disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center gap-1.5" 
@@ -747,16 +749,16 @@ export function Canvas() {
                     if (!result) {
                       const looseSelected = selectedIds.filter((id) => looseIds.includes(id))
                       if (looseSelected.length === 0) {
-                        setErrorMessage('Selecione trackers que estão soltos no canvas (não dentro de fileiras) para agrupar em uma fileira.')
+                        setErrorMessage(t('canvas.error.groupLoose'))
                         setShowErrorModal(true)
                       }
                     }
                   }}
                   disabled={selectedIds.length === 0}
-                  title={selectedIds.length === 0 ? 'Selecione trackers soltos para agrupar' : 'Agrupa trackers soltos selecionados em uma fileira'}
+                  title={selectedIds.length === 0 ? t('canvas.groupSelectLoose') : t('canvas.groupSelectLooseTooltip')}
                 >
                   <Layers size={14} />
-                  Agrupar em Fileira
+                  {t('canvas.groupInRow')}
                 </button>
               </div>
             </div>
@@ -765,7 +767,7 @@ export function Canvas() {
             <div className="rounded-lg border border-gray-200 bg-white p-2.5 shadow-sm">
               <div className="flex items-center gap-2 mb-2">
                 <Grid3x3 size={12} className="text-gray-500" />
-                <h4 className="text-[11px] font-medium text-gray-600">Seções</h4>
+                <h4 className="text-[11px] font-medium text-gray-600">{t('canvas.sections')}</h4>
               </div>
               <div className="space-y-1.5">
                 <button 
@@ -773,14 +775,14 @@ export function Canvas() {
                   onClick={() => addEmptyRowGroup()}
                 >
                   <Plus size={14} />
-                  Criar Seção
+                  {t('canvas.createSection')}
                 </button>
                 <button 
                   className="w-full h-9 rounded-lg bg-purple-50 text-purple-700 px-3 text-xs font-medium hover:bg-purple-100 active:bg-purple-200 transition-all border border-purple-200 flex items-center justify-center gap-1.5" 
                   onClick={() => groupSelectedRowsIntoGroup()}
                 >
                   <FolderPlus size={14} />
-                  Agrupar em Seção
+                  {t('canvas.groupInSection')}
                 </button>
               </div>
             </div>
@@ -789,7 +791,7 @@ export function Canvas() {
             <div className="rounded-lg border border-gray-200 bg-white p-2.5 shadow-sm">
               <div className="flex items-center gap-2 mb-2">
                 <Type size={12} className="text-gray-500" />
-                <h4 className="text-[11px] font-medium text-gray-600">Texto</h4>
+                <h4 className="text-[11px] font-medium text-gray-600">{t('canvas.text')}</h4>
               </div>
               <button 
                 className="w-full h-9 rounded-lg bg-teal-600 px-3 text-white text-xs font-medium hover:bg-teal-700 active:bg-teal-800 transition-all shadow-sm flex items-center justify-center gap-1.5" 
@@ -804,7 +806,7 @@ export function Canvas() {
                 }}
               >
                 <Plus size={14} />
-                Adicionar Texto
+                {t('canvas.addText')}
               </button>
             </div>
           </div>
@@ -821,7 +823,7 @@ export function Canvas() {
               <div className="flex items-center gap-2 mb-2">
                 <GripVertical size={14} className="text-gray-500" />
                 <h3 className="text-xs font-semibold text-gray-700 uppercase tracking-wider">
-                  Editar ({selectedIds.length})
+                  {t('canvas.edit')} ({selectedIds.length})
                 </h3>
               </div>
 
@@ -831,10 +833,10 @@ export function Canvas() {
                   <button 
                     className="w-full h-9 rounded-lg bg-orange-600 px-3 text-white text-xs font-medium hover:bg-orange-700 active:bg-orange-800 transition-all shadow-sm flex items-center justify-center gap-1.5" 
                     onClick={() => duplicateSelected()}
-                    title="Ctrl+V para duplicar"
+                    title={`Ctrl+V ${t('canvas.shortcut.duplicate').toLowerCase()}`}
                   >
                     <Copy size={14} />
-                    Duplicar
+                    {t('canvas.duplicate')}
                   </button>
                 </div>
               </div>
@@ -842,47 +844,47 @@ export function Canvas() {
               {/* Alignment Controls */}
               {selectedIds.length >= 2 && (
                 <div className="rounded-lg border border-gray-200 bg-white p-2.5 shadow-sm">
-                  <h4 className="text-[11px] font-medium text-gray-600 mb-2">Alinhamento</h4>
+                  <h4 className="text-[11px] font-medium text-gray-600 mb-2">{t('canvas.alignment')}</h4>
                   <div className="grid grid-cols-3 gap-1.5">
                     <button 
                       className="h-8 rounded-lg bg-gray-100 text-gray-700 px-2 text-xs font-medium flex items-center justify-center hover:bg-gray-200 active:bg-gray-300 transition-all" 
                       onClick={() => alignSelected('left')}
-                      title="Alinhar à esquerda"
+                      title={t('canvas.alignLeft')}
                     >
                       <AlignLeft size={13} />
                     </button>
                     <button 
                       className="h-8 rounded-lg bg-gray-100 text-gray-700 px-2 text-xs font-medium flex items-center justify-center hover:bg-gray-200 active:bg-gray-300 transition-all" 
                       onClick={() => alignSelected('center')}
-                      title="Centralizar horizontalmente"
+                      title={t('canvas.alignCenter')}
                     >
                       <AlignCenter size={13} />
                     </button>
                     <button 
                       className="h-8 rounded-lg bg-gray-100 text-gray-700 px-2 text-xs font-medium flex items-center justify-center hover:bg-gray-200 active:bg-gray-300 transition-all" 
                       onClick={() => alignSelected('right')}
-                      title="Alinhar à direita"
+                      title={t('canvas.alignRight')}
                     >
                       <AlignRight size={13} />
                     </button>
                     <button 
                       className="h-8 rounded-lg bg-gray-100 text-gray-700 px-2 text-xs font-medium flex items-center justify-center hover:bg-gray-200 active:bg-gray-300 transition-all" 
                       onClick={() => alignSelected('top')}
-                      title="Alinhar ao topo"
+                      title={t('canvas.alignTop')}
                     >
                       <AlignStartVertical size={13} />
                     </button>
                     <button 
                       className="h-8 rounded-lg bg-gray-100 text-gray-700 px-2 text-xs font-medium flex items-center justify-center hover:bg-gray-200 active:bg-gray-300 transition-all" 
                       onClick={() => alignSelected('middle')}
-                      title="Centralizar verticalmente"
+                      title={t('canvas.alignMiddle')}
                     >
                       <AlignCenterVertical size={13} />
                     </button>
                     <button 
                       className="h-8 rounded-lg bg-gray-100 text-gray-700 px-2 text-xs font-medium flex items-center justify-center hover:bg-gray-200 active:bg-gray-300 transition-all" 
                       onClick={() => alignSelected('bottom')}
-                      title="Alinhar à base"
+                      title={t('canvas.alignBottom')}
                     >
                       <AlignEndVertical size={13} />
                     </button>
@@ -893,12 +895,12 @@ export function Canvas() {
               {/* Distribution Controls */}
               {selectedIds.length >= 3 && (
                 <div className="rounded-lg border border-gray-200 bg-white p-2.5 shadow-sm">
-                  <h4 className="text-[11px] font-medium text-gray-600 mb-2">Distribuir</h4>
+                  <h4 className="text-[11px] font-medium text-gray-600 mb-2">{t('canvas.distribute')}</h4>
                   <div className="flex gap-1.5">
                     <button 
                       className="flex-1 h-8 rounded-lg bg-purple-50 text-purple-700 px-2 text-xs font-medium flex items-center justify-center gap-1 hover:bg-purple-100 active:bg-purple-200 transition-all border border-purple-200" 
                       onClick={() => distributeSelected('horizontal')}
-                      title="Distribuir horizontalmente"
+                      title={t('canvas.distributeHorizontal')}
                     >
                       <AlignHorizontalSpaceAround size={13} />
                       <span>H</span>
@@ -906,7 +908,7 @@ export function Canvas() {
                     <button 
                       className="flex-1 h-8 rounded-lg bg-purple-50 text-purple-700 px-2 text-xs font-medium flex items-center justify-center gap-1 hover:bg-purple-100 active:bg-purple-200 transition-all border border-purple-200" 
                       onClick={() => distributeSelected('vertical')}
-                      title="Distribuir verticalmente"
+                      title={t('canvas.distributeVertical')}
                     >
                       <AlignVerticalSpaceAround size={13} />
                       <span>V</span>
@@ -924,7 +926,7 @@ export function Canvas() {
           <div className="space-y-3 mb-4">
             <div className="flex items-center gap-2 mb-2">
               <Info size={14} className="text-gray-500" />
-              <h3 className="text-xs font-semibold text-gray-700 uppercase tracking-wider">Informações</h3>
+              <h3 className="text-xs font-semibold text-gray-700 uppercase tracking-wider">{t('canvas.info')}</h3>
             </div>
             
             {/* Status Legend */}
@@ -934,40 +936,40 @@ export function Canvas() {
             <div className="rounded-lg border border-gray-200 bg-white p-2.5 shadow-sm">
               <div className="flex items-center gap-2 mb-2">
                 <Keyboard size={12} className="text-gray-500" />
-                <h4 className="text-[11px] font-medium text-gray-600">Atalhos</h4>
+                <h4 className="text-[11px] font-medium text-gray-600">{t('canvas.shortcuts')}</h4>
               </div>
               <div className="space-y-1 text-[10px] text-gray-600">
                 <div className="flex justify-between items-center py-0.5">
                   <span className="text-gray-500">Scroll</span>
-                  <kbd className="px-1.5 py-0.5 bg-gray-100 rounded text-[9px] font-mono">Pan</kbd>
+                  <kbd className="px-1.5 py-0.5 bg-gray-100 rounded text-[9px] font-mono">{t('canvas.shortcut.pan')}</kbd>
                 </div>
                 <div className="flex justify-between items-center py-0.5">
                   <span className="text-gray-500">Ctrl+Scroll</span>
-                  <kbd className="px-1.5 py-0.5 bg-gray-100 rounded text-[9px] font-mono">Zoom</kbd>
+                  <kbd className="px-1.5 py-0.5 bg-gray-100 rounded text-[9px] font-mono">{t('canvas.shortcut.zoom')}</kbd>
                 </div>
                 <div className="flex justify-between items-center py-0.5">
                   <span className="text-gray-500">Space+Drag</span>
-                  <kbd className="px-1.5 py-0.5 bg-gray-100 rounded text-[9px] font-mono">Pan</kbd>
+                  <kbd className="px-1.5 py-0.5 bg-gray-100 rounded text-[9px] font-mono">{t('canvas.shortcut.pan')}</kbd>
                 </div>
                 <div className="flex justify-between items-center py-0.5">
                   <span className="text-gray-500">Alt+Drag</span>
-                  <kbd className="px-1.5 py-0.5 bg-gray-100 rounded text-[9px] font-mono">Vertical</kbd>
+                  <kbd className="px-1.5 py-0.5 bg-gray-100 rounded text-[9px] font-mono">{t('canvas.shortcut.vertical')}</kbd>
                 </div>
                 <div className="flex justify-between items-center py-0.5">
                   <span className="text-gray-500">Ctrl+A</span>
-                  <kbd className="px-1.5 py-0.5 bg-gray-100 rounded text-[9px] font-mono">Selecionar</kbd>
+                  <kbd className="px-1.5 py-0.5 bg-gray-100 rounded text-[9px] font-mono">{t('canvas.shortcut.select')}</kbd>
                 </div>
                 <div className="flex justify-between items-center py-0.5">
                   <span className="text-gray-500">Ctrl+V</span>
-                  <kbd className="px-1.5 py-0.5 bg-gray-100 rounded text-[9px] font-mono">Duplicar</kbd>
+                  <kbd className="px-1.5 py-0.5 bg-gray-100 rounded text-[9px] font-mono">{t('canvas.shortcut.duplicate')}</kbd>
                 </div>
                 <div className="flex justify-between items-center py-0.5">
                   <span className="text-gray-500">Escape</span>
-                  <kbd className="px-1.5 py-0.5 bg-gray-100 rounded text-[9px] font-mono">Limpar</kbd>
+                  <kbd className="px-1.5 py-0.5 bg-gray-100 rounded text-[9px] font-mono">{t('canvas.shortcut.clear')}</kbd>
                 </div>
                 <div className="flex justify-between items-center py-0.5">
                   <span className="text-gray-500">Delete</span>
-                  <kbd className="px-1.5 py-0.5 bg-gray-100 rounded text-[9px] font-mono">Remover</kbd>
+                  <kbd className="px-1.5 py-0.5 bg-gray-100 rounded text-[9px] font-mono">{t('canvas.shortcut.remove')}</kbd>
                 </div>
               </div>
             </div>
@@ -980,7 +982,7 @@ export function Canvas() {
           <div className="rounded-lg border-2 border-blue-200 bg-blue-50 p-2.5 shadow-sm">
             <div className="flex items-center gap-2 mb-2">
               <Save size={12} className="text-blue-600" />
-              <h4 className="text-[11px] font-semibold text-blue-700">Arquivo</h4>
+              <h4 className="text-[11px] font-semibold text-blue-700">{t('canvas.file')}</h4>
             </div>
             <button
               className="w-full h-10 rounded-lg bg-blue-600 px-3 text-white text-sm font-semibold hover:bg-blue-700 active:bg-blue-800 transition-all shadow-md disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
@@ -1017,7 +1019,7 @@ export function Canvas() {
               disabled={isSaving}
             >
               <Save size={16} />
-              {isSaving ? 'Salvando...' : 'Salvar Mapa'}
+              {isSaving ? t('canvas.saving') : t('canvas.save')}
             </button>
           </div>
         </div>
@@ -1089,7 +1091,7 @@ export function Canvas() {
                   onClick={handleSaveWithName}
                   className="px-4 py-2 text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition-colors"
                 >
-                  Salvar
+                  {t('canvas.save')}
                 </button>
               </div>
             </div>
@@ -1160,7 +1162,7 @@ export function Canvas() {
             <div className="absolute inset-0 z-50 flex items-center justify-center bg-white bg-opacity-90 rounded-lg">
               <div className="flex flex-col items-center gap-3">
                 <div className="w-12 h-12 border-4 border-green-600 border-t-transparent rounded-full animate-spin"></div>
-                <p className="text-sm font-medium text-gray-700">Salvando mapa...</p>
+                <p className="text-sm font-medium text-gray-700">{t('canvas.saving')}</p>
               </div>
             </div>
           )}

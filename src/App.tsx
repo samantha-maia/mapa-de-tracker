@@ -9,12 +9,14 @@ import { AppParamsProvider, useAppParams } from './context/AppParamsContext'
 import { useEffect } from 'react'
 import { useFieldsStore } from './store/fieldsStore'
 import { useTrackersStore } from './store/trackersStore'
+import { I18nProvider, resolveLocale, useI18n } from './i18n'
 
 function Header() {
   const location = useLocation()
   const isViewMode = location.pathname === '/view'
   const appParams = useAppParams()
   const fields = useFieldsStore((s) => s.fields)
+  const { t } = useI18n()
   
   // Determina se é criação ou edição baseado no fieldId
   // Prioriza o contexto (que persiste) sobre a URL (que pode ser limpa)
@@ -49,6 +51,7 @@ function Header() {
     if (appParams.companyId !== null) params.set('companyId', appParams.companyId)
     if (appParams.fieldId !== null) params.set('fieldId', appParams.fieldId)
     if (appParams.authToken !== null) params.set('authToken', appParams.authToken)
+    if (appParams.locale !== null) params.set('locale', appParams.locale)
     if (mode) params.set('mode', mode)
     const queryString = params.toString()
     return queryString ? `${path}?${queryString}` : path
@@ -56,18 +59,18 @@ function Header() {
 
   // Título baseado no modo
   const getTitle = () => {
-    if (isViewMode) return 'Visualizar Mapa de Tracker'
-    if (isEditMode) return 'Editar Mapa de Tracker'
-    if (isCreateMode) return 'Criar Mapa de Tracker'
-    return 'Criar Mapa de Tracker' // Default
+    if (isViewMode) return t('header.title.view')
+    if (isEditMode) return t('header.title.edit')
+    if (isCreateMode) return t('header.title.create')
+    return t('header.title.create')
   }
 
   // Descrição baseada no modo
   const getDescription = () => {
-    if (isViewMode) return 'Visualize o mapa de trackers do projeto. Modo somente leitura.'
-    if (isEditMode) return 'Edite e administre os lotes que fazem parte do seu projeto. Cada lote abarca trackers e módulos.'
-    if (isCreateMode) return 'Crie e administre os lotes que fazem parte do seu projeto. Cada lote abarca trackers e módulos.'
-    return 'Crie e administre os lotes que fazem parte do seu projeto. Cada lote abarca trackers e módulos.' // Default
+    if (isViewMode) return t('header.desc.view')
+    if (isEditMode) return t('header.desc.edit')
+    if (isCreateMode) return t('header.desc.create')
+    return t('header.desc.create')
   }
 
   return (
@@ -106,14 +109,14 @@ function Header() {
               className="flex items-center gap-2 h-10 rounded-[12px] bg-[#1d5cc6] px-4 text-xs font-medium text-white hover:bg-blue-700 transition-colors shadow-sm"
             >
               <Eye size={16} />
-              Visualizar Mapa
+              {t('header.actions.viewMap')}
             </Link>
           ) : (
             <Link
               to={buildUrlWithParams('/', isEditMode ? 'edit' : 'create')}
               className="flex items-center gap-2 h-10 rounded-[12px] bg-gray-600 px-4 text-xs font-medium text-white hover:bg-gray-700 transition-colors shadow-sm"
             >
-              Editar
+              {t('header.actions.edit')}
             </Link>
           )}
         </div>
@@ -137,6 +140,7 @@ function AutoRedirectToView() {
     const companyId = urlParams.get('companyId') !== null ? urlParams.get('companyId') : appParams.companyId
     const fieldId = urlParams.get('fieldId') !== null ? urlParams.get('fieldId') : appParams.fieldId
     const authToken = urlParams.get('authToken') !== null ? urlParams.get('authToken') : appParams.authToken
+    const locale = urlParams.get('locale') ?? urlParams.get('lang') ?? appParams.locale
 
     // Se não tiver fieldId, não faz nada (deixa o usuário escolher)
     if (!fieldId) {
@@ -163,6 +167,7 @@ function AutoRedirectToView() {
         if (companyId) params.set('companyId', companyId)
         if (fieldId) params.set('fieldId', fieldId)
         if (authToken) params.set('authToken', authToken)
+        if (locale) params.set('locale', locale)
         params.set('mode', 'view')
         navigate(`/view?${params.toString()}`, { replace: true })
       }
@@ -178,6 +183,7 @@ function AutoRedirectToView() {
         params.set('companyId', companyId)
         params.set('fieldId', fieldId)
         params.set('authToken', authToken)
+        if (locale) params.set('locale', locale)
         params.set('mode', 'view')
         navigate(`/view?${params.toString()}`, { replace: true })
       }
@@ -187,20 +193,10 @@ function AutoRedirectToView() {
   return null
 }
 
-export default function App() {
-  return (
-    <BrowserRouter>
-      <AppParamsProvider>
-        <AutoRedirectToView />
-        <AppContent />
-      </AppParamsProvider>
-    </BrowserRouter>
-  )
-}
-
 function AppContent() {
   const location = useLocation()
   const appParams = useAppParams()
+  const { t } = useI18n()
   
   // Carrega trackers sempre que a aplicação abrir ou authToken mudar
   useEffect(() => {
@@ -257,11 +253,38 @@ function AppContent() {
       {!hasFieldSelected && (
         <div className="flex-1 flex items-center justify-center bg-gray-50">
           <div className="text-center">
-            <p className="text-gray-600 text-lg mb-2">Selecione um campo para começar</p>
-            <p className="text-gray-500 text-sm">Escolha um campo existente ou crie um novo campo</p>
+            <p className="text-gray-600 text-lg mb-2">{t('fieldSelector.empty.title')}</p>
+            <p className="text-gray-500 text-sm">{t('fieldSelector.empty.subtitle')}</p>
           </div>
         </div>
       )}
     </div>
+  )
+}
+
+function AppProvidersBridge() {
+  const appParams = useAppParams()
+  const hostLocale =
+    (typeof window !== 'undefined' && (window as any).__MAPA_DE_TRACKER_LOCALE__) ??
+    (import.meta as any).env?.VITE_APP_LOCALE ??
+    null
+
+  const locale = resolveLocale(appParams.locale ?? hostLocale)
+
+  return (
+    <I18nProvider locale={locale}>
+      <AutoRedirectToView />
+      <AppContent />
+    </I18nProvider>
+  )
+}
+
+export default function App() {
+  return (
+    <BrowserRouter>
+      <AppParamsProvider>
+        <AppProvidersBridge />
+      </AppParamsProvider>
+    </BrowserRouter>
   )
 }

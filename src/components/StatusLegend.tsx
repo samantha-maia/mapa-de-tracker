@@ -1,16 +1,7 @@
 import { useState, useRef, useEffect } from 'react'
 import { X, GripVertical } from 'lucide-react'
 import { getStatusColor } from '../utils/statusColors'
-
-const STATUS_DESCRIPTIONS: Record<number, string> = {
-  1: 'Não cravada',
-  2: 'Cravada com Sucesso',
-  3: 'Cravada com problema mas sem impeditivo para montagem do tracker',
-  4: 'Problema que impede a montagem do tracker',
-  5: 'Módulos montados',
-  6: 'Aguardando inspeção',
-  7: 'Inspeção reprovada',
-}
+import { useI18n } from '../i18n'
 
 type StatusLegendProps = {
   compact?: boolean
@@ -20,12 +11,17 @@ type StatusLegendProps = {
 }
 
 export function StatusLegend({ compact = false, onClose, position, onPositionChange }: StatusLegendProps) {
+  const { t } = useI18n()
   const statusIds = [1, 2, 3, 4, 5, 6, 7] as const
   const [isDragging, setIsDragging] = useState(false)
   const [dragStart, setDragStart] = useState<{ mouseX: number; mouseY: number; elementX: number; elementY: number } | null>(null)
   const [currentPosition, setCurrentPosition] = useState(position || { x: 16, y: 16 })
   const legendRef = useRef<HTMLDivElement>(null)
   const DRAG_THRESHOLD = 5 // pixels de movimento antes de iniciar o drag
+  
+  const getStatusDescription = (statusId: number) => {
+    return t(`statusLegend.status.${statusId}`)
+  }
 
   // Sincroniza posição externa
   useEffect(() => {
@@ -117,7 +113,7 @@ export function StatusLegend({ compact = false, onClose, position, onPositionCha
           <div className="flex items-center gap-2">
             <GripVertical size={14} className="text-gray-400" />
             <div className="text-xs font-semibold text-gray-700 uppercase tracking-wide">
-              Legenda de Status
+              {t('statusLegend.title')}
             </div>
           </div>
           {onClose && (
@@ -127,7 +123,7 @@ export function StatusLegend({ compact = false, onClose, position, onPositionCha
                 onClose()
               }}
               className="p-1 hover:bg-gray-100 rounded transition-colors"
-              title="Fechar legenda"
+              title={t('statusLegend.close')}
             >
               <X size={14} className="text-gray-500" />
             </button>
@@ -139,7 +135,7 @@ export function StatusLegend({ compact = false, onClose, position, onPositionCha
           <div className="space-y-1.5 max-h-[400px] overflow-y-auto">
             {statusIds.map((statusId) => {
               const color = getStatusColor(statusId)
-              const description = STATUS_DESCRIPTIONS[statusId]
+              const description = getStatusDescription(statusId)
               return (
                 <div key={statusId} className="flex items-center gap-2">
                   <div
@@ -164,12 +160,12 @@ export function StatusLegend({ compact = false, onClose, position, onPositionCha
   return (
     <div className="rounded-lg border border-gray-200 bg-white p-2.5 shadow-sm">
       <h4 className="text-[11px] font-medium text-gray-600 mb-2">
-        Legenda de Status
+        {t('statusLegend.title')}
       </h4>
       <div className="space-y-1.5">
         {statusIds.map((statusId) => {
           const color = getStatusColor(statusId)
-          const description = STATUS_DESCRIPTIONS[statusId]
+          const description = getStatusDescription(statusId)
           return (
             <div key={statusId} className="flex items-center gap-2">
               <div

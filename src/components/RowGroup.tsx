@@ -2,8 +2,10 @@ import { useDroppable, useDraggable } from '@dnd-kit/core'
 import { SortableContext, verticalListSortingStrategy, useSortable } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
 import React, { useMemo, useRef, useState, useLayoutEffect } from 'react'
+import { createPortal } from 'react-dom'
 import { useLayoutStore } from '../store/layoutStore'
 import { Row } from './Row'
+import { useI18n } from '../i18n'
 import { 
   calculateRowBoxesFromDOM, 
   calculateGroupDimensions, 
@@ -15,6 +17,7 @@ type Props = { groupId: string; viewMode?: boolean }
 export function RowGroup({ groupId, viewMode = false }: Props) {
   const group = useLayoutStore((s) => s.rowGroups.find((g) => g.id === groupId))
   const rowIdsInGroup = group?.rowIds ?? []
+  const { t } = useI18n()
   const fallbackSectionNumber = useLayoutStore(
     React.useCallback((s) => {
       const index = s.rowGroups.findIndex((g) => g.id === groupId)
@@ -23,9 +26,12 @@ export function RowGroup({ groupId, viewMode = false }: Props) {
   )
 
   const groupRef = useRef<HTMLDivElement | null>(null)
+  const toolbarButtonRef = useRef<HTMLButtonElement | null>(null)
+  const [toolbarPosition, setToolbarPosition] = useState<{ top: number; right: number } | null>(null)
   
   // State para modo de drag manual (precisa estar antes do useDraggable)
   const [isDragMode, setIsDragMode] = useState(false)
+  const [showToolbar, setShowToolbar] = useState(false)
   
   const { setNodeRef, isOver } = useDroppable({
     id: `group:${groupId}`,
@@ -44,6 +50,55 @@ export function RowGroup({ groupId, viewMode = false }: Props) {
   // State para armazenar as boxes calculadas do DOM real
   const [rowBoxes, setRowBoxes] = useState<RowBox[]>([])
   const isUpdatingRef = useRef(false)
+  
+  // Atualizar posição do toolbar quando necessário
+  React.useEffect(() => {
+    if (!showToolbar || !toolbarButtonRef.current) return
+    
+    const updatePosition = () => {
+      if (toolbarButtonRef.current) {
+        const rect = toolbarButtonRef.current.getBoundingClientRect()
+        setToolbarPosition({
+          top: rect.bottom + 4,
+          right: window.innerWidth - rect.right
+        })
+      }
+    }
+    
+    updatePosition()
+    
+    // Atualizar posição em caso de scroll ou resize
+    window.addEventListener('scroll', updatePosition, true)
+    window.addEventListener('resize', updatePosition)
+    
+    return () => {
+      window.removeEventListener('scroll', updatePosition, true)
+      window.removeEventListener('resize', updatePosition)
+    }
+  }, [showToolbar])
+  
+  // Fechar toolbar ao clicar fora
+  React.useEffect(() => {
+    if (!showToolbar) return
+    
+    const handleClickOutside = (e: MouseEvent) => {
+      const target = e.target as Node
+      const toolbarElement = document.querySelector(`[data-toolbar-group="${groupId}"]`)
+      
+      if (
+        toolbarElement && 
+        toolbarButtonRef.current &&
+        !toolbarElement.contains(target) && 
+        !toolbarButtonRef.current.contains(target)
+      ) {
+        setShowToolbar(false)
+        setToolbarPosition(null)
+      }
+    }
+    
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [showToolbar, groupId])
   
   // Sempre em modo edição: sem pré-finalização ou offsets
 
@@ -210,58 +265,112 @@ export function RowGroup({ groupId, viewMode = false }: Props) {
       {...attributes}
       {...listeners}
     >
-      {/* Toolbar externa (fora da área do grupo) - apenas em modo edição */}
-      {!viewMode && (
-        <div className="absolute -top-8 left-0 flex items-center gap-2" style={{ zIndex: 100 }}>
-          {/* <div className="text-sm font-semibold text-blue-800 select-none">
-            {group.name || `Grupo ${groupId}`}
-          </div> */}
-          <button 
-            className={`rounded-[12px] px-2 py-1 text-xs text-white ${isDragMode ? 'bg-green-600 hover:bg-green-700' : 'bg-gray-600 hover:bg-gray-700'}`}
-            onClick={(e)=>{ 
-              e.preventDefault(); 
-              e.stopPropagation(); 
-              setIsDragMode(!isDragMode);
-            }}
-            title={isDragMode ? 'Desativar arrasto' : 'Ativar arrasto'}
-          >
-            <svg width="12" height="12" viewBox="0 0 12 12" fill="currentColor">
-              <circle cx="2" cy="2" r="1"/>
-              <circle cx="6" cy="2" r="1"/>
-              <circle cx="10" cy="2" r="1"/>
-              <circle cx="2" cy="6" r="1"/>
-              <circle cx="6" cy="6" r="1"/>
-              <circle cx="10" cy="6" r="1"/>
-              <circle cx="2" cy="10" r="1"/>
-              <circle cx="6" cy="10" r="1"/>
-              <circle cx="10" cy="10" r="1"/>
-            </svg>
-          </button>
-          <button 
-            className="rounded-[12px] bg-yellow-600 px-1.5 py-0.5 text-xs text-white hover:bg-yellow-700" 
-            onClick={(e)=>{ 
-              e.preventDefault(); 
-              e.stopPropagation(); 
-              resetGroupRowOffsets(groupId);
-            }}
-            title="Resetar posições horizontais das fileiras"
-          >
-            ↺
-          </button>
-          <button className="rounded-[12px] bg-red-600 px-1.5 py-0.5 text-xs text-white" onClick={(e)=>{ e.preventDefault(); e.stopPropagation(); removeGroup(groupId) }}>x</button>
-        </div>
-      )}
+      {/* Header externo com título e barra de ícones (fora do card) */}
+      <div
+        className="absolute -top-9 left-0 right-0 flex flex-col items-center gap-0.5"
+        style={{ zIndex: 200 }}
+      >
+        <div className="flex items-center pointer-events-auto">
+          {displaySectionNumber !== undefined && (
+            <div
+              className="relative flex items-center gap-1 rounded-full bg-white/90 px-2.5 py-0.5 text-[9px] font-semibold uppercase tracking-wide text-purple-700 shadow-lg border border-purple-200/70 whitespace-nowrap"
+              aria-label={`${t('rowGroup.section')} ${displaySectionNumber}`}
+            >
+              <span>{t('rowGroup.section')} {displaySectionNumber}</span>
+              
+              {!viewMode && (
+                <>
+                  <button
+                    ref={toolbarButtonRef}
+                    data-toolbar-button={groupId}
+                    className="rounded-md bg-transparent border-0 text-gray-600 h-4 w-4 flex items-center justify-center hover:bg-gray-100 focus:outline-none focus:ring-1 focus:ring-purple-300 p-0"
+                    onClick={(e) => {
+                      e.preventDefault()
+                      e.stopPropagation()
+                      if (toolbarButtonRef.current) {
+                        const rect = toolbarButtonRef.current.getBoundingClientRect()
+                        setToolbarPosition({
+                          top: rect.bottom + 4,
+                          right: window.innerWidth - rect.right
+                        })
+                      }
+                      setShowToolbar((prev) => !prev)
+                    }}
+                    aria-haspopup="true"
+                    aria-expanded={showToolbar}
+                    aria-label={t('rowGroup.toolbar.open')}
+                  >
+                    <svg width="12" height="12" viewBox="0 0 14 14" fill="none" aria-hidden="true">
+                      <circle cx="2.5" cy="7" r="1.1" fill="currentColor" />
+                      <circle cx="7" cy="7" r="1.1" fill="currentColor" />
+                      <circle cx="11.5" cy="7" r="1.1" fill="currentColor" />
+                    </svg>
+                  </button>
 
-      {displaySectionNumber !== undefined && (
-        <div
-          className="pointer-events-none absolute top-4 right-2 z-[200]"
-          aria-label={`Seção ${displaySectionNumber}`}
-        >
-          <div className="rounded-full bg-white/90 px-3 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-purple-700 shadow-lg border border-purple-200/70">
-            Seção {displaySectionNumber}
-          </div>
+                  {showToolbar && toolbarPosition && typeof document !== 'undefined' && (
+                    createPortal(
+                      <div 
+                        data-toolbar-group={groupId}
+                        className="fixed flex items-center gap-2 rounded-full bg-white shadow-xl border border-gray-200 px-2 py-1 z-[9999]"
+                        style={{
+                          top: `${toolbarPosition.top}px`,
+                          right: `${toolbarPosition.right}px`
+                        }}
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        <button 
+                          className={`rounded-[10px] px-2 py-1 text-xs text-white ${isDragMode ? 'bg-green-600 hover:bg-green-700' : 'bg-gray-600 hover:bg-gray-700'}`}
+                          onClick={(e)=>{ 
+                            e.preventDefault(); 
+                            e.stopPropagation(); 
+                            setIsDragMode(!isDragMode);
+                          }}
+                          title={isDragMode ? t('rowGroup.toolbar.dragOn') : t('rowGroup.toolbar.dragOff')}
+                        >
+                          <svg width="12" height="12" viewBox="0 0 12 12" fill="currentColor">
+                            <circle cx="2" cy="2" r="1"/>
+                            <circle cx="6" cy="2" r="1"/>
+                            <circle cx="10" cy="2" r="1"/>
+                            <circle cx="2" cy="6" r="1"/>
+                            <circle cx="6" cy="6" r="1"/>
+                            <circle cx="10" cy="6" r="1"/>
+                            <circle cx="2" cy="10" r="1"/>
+                            <circle cx="6" cy="10" r="1"/>
+                            <circle cx="10" cy="10" r="1"/>
+                          </svg>
+                        </button>
+                        <button 
+                          className="rounded-[10px] bg-yellow-600 px-1.5 py-0.5 text-xs text-white hover:bg-yellow-700" 
+                          onClick={(e)=>{ 
+                            e.preventDefault(); 
+                            e.stopPropagation(); 
+                            resetGroupRowOffsets(groupId);
+                          }}
+                          title={t('rowGroup.toolbar.reset')}
+                        >
+                          ↺
+                        </button>
+                        <button
+                          className="rounded-[10px] bg-red-600 px-1.5 py-0.5 text-xs text-white hover:bg-red-700"
+                          onClick={(e)=>{ 
+                            e.preventDefault(); 
+                            e.stopPropagation(); 
+                            removeGroup(groupId) 
+                          }}
+                          title={t('rowGroup.toolbar.remove')}
+                        >
+                          x
+                        </button>
+                      </div>,
+                      document.body
+                    )
+                  )}
+                </>
+              )}
+            </div>
+          )}
         </div>
-      )}
+      </div>
 
       {/* Content */}
       <div className="relative" style={{ zIndex: 1 }}>
@@ -278,7 +387,7 @@ export function RowGroup({ groupId, viewMode = false }: Props) {
           </SortableContext>
         ) : (
           <div className="px-2 pb-2">
-            <div className="text-gray-500 text-sm">Grupo vazio - arraste fileiras para cá</div>
+            <div className="text-gray-500 text-sm">{t('rowGroup.empty')}</div>
           </div>
         )}
       </div>
@@ -299,6 +408,7 @@ function GroupRowItem({ groupId, rowId, viewMode = false }: GroupRowItemProps) {
   const setOffsetX = useLayoutStore((s) => s.setRowGroupOffsetX)
   const removeRowFromGroup = useLayoutStore((s) => s.removeRowFromGroup)
   const isSelected = selectedIds.includes(rowId)
+  const { t } = useI18n()
 
   const [isDraggingH, setIsDraggingH] = React.useState(false)
   const dragSessionRef = React.useRef<{
@@ -477,7 +587,7 @@ function GroupRowItem({ groupId, rowId, viewMode = false }: GroupRowItemProps) {
             background: 'linear-gradient(to right, rgba(59, 130, 246, 0.3), rgba(59, 130, 246, 0.1))',
             borderRight: '2px solid rgba(59, 130, 246, 0.5)'
           }}
-          title="Arraste para ajustar posição horizontal"
+          title={t('rowGroup.horizontal.dragTitle')}
         >
           {/* Ícone de drag horizontal */}
           <div className="absolute -left-3 flex flex-col gap-0.5 opacity-70">
@@ -505,10 +615,10 @@ function GroupRowItem({ groupId, rowId, viewMode = false }: GroupRowItemProps) {
             e.stopPropagation()
             removeRowFromGroup(rowId)
           }}
-          aria-label="Remover fileira do grupo"
-          title="Remover fileira do grupo"
+          aria-label={t('rowGroup.row.removeTooltip')}
+          title={t('rowGroup.row.removeTooltip')}
         >
-          Remover Row
+          {t('rowGroup.row.removeLabel')}
         </button>
       )}
     </div>

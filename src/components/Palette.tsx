@@ -2,6 +2,7 @@ import { useDraggable } from '@dnd-kit/core'
 import { useState, useMemo, useEffect, useRef } from 'react'
 import type { ExternalTracker } from '../data/trackersCatalog'
 import { useTrackers } from '../hooks/useTrackers'
+import { useI18n } from '../i18n'
 
 type PaletteItemProps = { ext: ExternalTracker }
 
@@ -27,6 +28,7 @@ function PaletteItem({ ext }: PaletteItemProps) {
 }
 
 export function Palette() {
+  const { t } = useI18n()
   const [searchTerm, setSearchTerm] = useState('')
   const [isOpen, setIsOpen] = useState(false)
   const dropdownRef = useRef<HTMLDivElement>(null)
@@ -60,7 +62,7 @@ export function Palette() {
 
   return (
     <div className="space-y-2">
-      <h3 className="text-sm font-semibold text-gray-700">Trackers disponíveis</h3>
+      <h3 className="text-sm font-semibold text-gray-700">{t('palette.title')}</h3>
       
       {/* Combobox */}
       <div className="relative" ref={dropdownRef}>
@@ -71,7 +73,7 @@ export function Palette() {
           className="w-full flex items-center justify-between rounded border border-gray-300 bg-white px-3 py-2 text-sm text-left hover:border-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
         >
           <span className="text-gray-700">
-            {isOpen ? 'Fechar lista' : `Selecionar tracker (${loading ? '...' : trackers.length} disponíveis)`}
+            {isOpen ? t('palette.close') : `${t('palette.select')} (${loading ? '...' : trackers.length} ${t('palette.available')})`}
           </span>
           <svg
             className={`h-4 w-4 text-gray-500 transition-transform ${isOpen ? 'rotate-180' : ''}`}
@@ -90,7 +92,7 @@ export function Palette() {
             <div className="p-2 border-b border-gray-200">
               <input
                 type="text"
-                placeholder="Buscar por nome, fabricante, estacas..."
+                placeholder={t('palette.search.placeholder')}
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="w-full rounded border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
@@ -102,11 +104,11 @@ export function Palette() {
             <div className="overflow-y-auto max-h-80">
               {loading ? (
                 <div className="p-4 text-center text-sm text-gray-500">
-                  Carregando trackers...
+                  {t('palette.loading')}
                 </div>
               ) : error ? (
                 <div className="p-4 text-center text-sm text-red-500">
-                  Erro ao carregar: {error}
+                  {t('palette.error')}: {error}
                 </div>
               ) : filteredTrackers.length > 0 ? (
                 <div className="p-1.5 space-y-1">
@@ -116,7 +118,7 @@ export function Palette() {
                 </div>
               ) : (
                 <div className="p-4 text-center text-sm text-gray-500">
-                  Nenhum tracker encontrado
+                  {t('palette.empty')}
                 </div>
               )}
             </div>
@@ -124,7 +126,7 @@ export function Palette() {
             {/* Footer com contador */}
             {searchTerm && !loading && (
               <div className="px-3 py-2 text-xs text-gray-500 border-t border-gray-200 bg-gray-50">
-                {filteredTrackers.length} de {trackers.length} trackers
+                {filteredTrackers.length} {t('palette.count')} {trackers.length}
               </div>
             )}
           </div>

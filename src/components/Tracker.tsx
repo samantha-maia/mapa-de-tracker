@@ -11,6 +11,16 @@ type Props = {
   viewMode?: boolean
 }
 
+// Converte cor HEX para rgba com opacidade
+function hexToRgba(hex: string, opacity: number): string {
+  const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex)
+  if (!result) return hex
+  const r = parseInt(result[1], 16)
+  const g = parseInt(result[2], 16)
+  const b = parseInt(result[3], 16)
+  return `rgba(${r}, ${g}, ${b}, ${opacity})`
+}
+
 export function Tracker({ tracker, selected, viewMode = false }: Props) {
   const { attributes, listeners, setNodeRef, isDragging } = useDraggable({ 
     id: tracker.id, 
@@ -31,7 +41,7 @@ export function Tracker({ tracker, selected, viewMode = false }: Props) {
         ref={viewMode ? undefined : setNodeRef}
         {...(viewMode ? {} : attributes)}
         {...(viewMode ? {} : listeners)}
-        className={`pointer-events-auto select-none rounded bg-white p-2  text-xs shadow-sm ${
+        className={`pointer-events-auto select-none rounded p-2  text-xs shadow-sm ${
           selected ? 'ring-2 ring-blue-500' : ''
         } ${isDragging ? 'opacity-50' : ''}`}
         style={{ 
@@ -40,6 +50,7 @@ export function Tracker({ tracker, selected, viewMode = false }: Props) {
           borderColor: trackerStatusColor.color,
           borderWidth: '1px',
           borderStyle: 'solid',
+          backgroundColor: hexToRgba(trackerStatusColor.color, 0.1), // Background com 10% de opacidade
         }}
       >
         {tracker.ext ? (

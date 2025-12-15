@@ -8,8 +8,10 @@ import { StatusLegend } from './StatusLegend'
 import { useLayoutStore } from '../store/layoutStore'
 import { GRID } from '../utils/gridConstants'
 import { useAppParams } from '../context/AppParamsContext'
+import { useI18n } from '../i18n'
 
 export function ViewCanvas() {
+  const { t } = useI18n()
   const canvasRef = useRef<HTMLDivElement | null>(null)
   const [isLoading, setIsLoading] = useState(false)
   const [isLegendVisible, setIsLegendVisible] = useState(true)
@@ -179,7 +181,7 @@ export function ViewCanvas() {
 
       {/* Zoom Controls */}
       <div className="absolute top-4 right-4 rounded-lg border border-gray-200 bg-white p-3 shadow-lg">
-        <div className="text-xs font-semibold text-gray-700 mb-2 uppercase tracking-wide">Zoom</div>
+        <div className="text-xs font-semibold text-gray-700 mb-2 uppercase tracking-wide">{t('viewCanvas.zoom')}</div>
         <div className="space-y-2">
           <div className="flex gap-1.5">
             <button 
@@ -201,7 +203,7 @@ export function ViewCanvas() {
                 resetPan()
               }}
             >
-              Reset
+              {t('viewCanvas.reset')}
             </button>
           </div>
           <div className="text-xs text-gray-600 text-center font-medium py-1">

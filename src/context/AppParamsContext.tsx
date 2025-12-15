@@ -7,6 +7,7 @@ interface AppParams {
   companyId: string | null
   fieldId: string | null
   authToken: string | null
+  locale: string | null
 }
 
 const AppParamsContext = createContext<AppParams>({
@@ -14,6 +15,7 @@ const AppParamsContext = createContext<AppParams>({
   companyId: null,
   fieldId: null,
   authToken: null,
+  locale: null,
 })
 
 // Função helper para extrair parâmetros da URL
@@ -24,6 +26,7 @@ const getParamsFromUrl = (search: string): AppParams => {
     companyId: urlParams.get('companyId'),
     fieldId: urlParams.get('fieldId'),
     authToken: urlParams.get('authToken'),
+    locale: urlParams.get('lang') ?? urlParams.get('locale'),
   }
 }
 
@@ -41,7 +44,7 @@ export function AppParamsProvider({ children }: { children: ReactNode }) {
     // Só atualiza se houver novos parâmetros na URL
     // Isso preserva os valores anteriores se a URL for limpa
     // IMPORTANTE: verifica explicitamente !== null para permitir fieldId = "0"
-    if (newParams.projectId !== null || newParams.companyId !== null || newParams.fieldId !== null || newParams.authToken !== null) {
+    if (newParams.projectId !== null || newParams.companyId !== null || newParams.fieldId !== null || newParams.authToken !== null || newParams.locale !== null) {
       setParams(newParams)
     }
     // Se a URL não tem parâmetros mas já temos valores, mantém os valores anteriores
