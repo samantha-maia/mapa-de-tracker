@@ -200,8 +200,8 @@ function AppContent() {
   
   // Carrega trackers sempre que a aplicação abrir ou authToken mudar
   useEffect(() => {
-    useTrackersStore.getState().fetchTrackers(appParams.authToken)
-  }, [appParams.authToken])
+    useTrackersStore.getState().fetchTrackers(appParams.companyId, appParams.authToken)
+  }, [appParams.companyId, appParams.authToken])
   
   // Verifica se há um fieldId selecionado (pode ser "0" para criar novo)
   const urlParams = new URLSearchParams(location.search)

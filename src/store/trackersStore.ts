@@ -7,7 +7,7 @@ interface TrackersStore {
   trackers: ExternalTracker[]
   loading: boolean
   error: string | null
-  fetchTrackers: (authToken?: string | null) => Promise<void>
+  fetchTrackers: (companyId?: string | number | null, authToken?: string | null) => Promise<void>
   getTrackerById: (id: number) => ExternalTracker | undefined
 }
 
@@ -16,7 +16,7 @@ export const useTrackersStore = create<TrackersStore>((set, get) => ({
   loading: false,
   error: null,
   
-  fetchTrackers: async (authToken?: string | null) => {
+  fetchTrackers: async (companyId?: string | number | null, authToken?: string | null) => {
     // Evita apenas chamadas duplicadas simultâneas (se já estiver carregando)
     const state = get()
     if (state.loading) {
@@ -27,6 +27,9 @@ export const useTrackersStore = create<TrackersStore>((set, get) => ({
     
     try {
       const data = await apiRequest<ExternalTracker[]>(API_ROUTES.trackersCatalog, {
+        query: {
+          company_id: companyId ?? undefined,
+        },
         authToken,
       })
       
